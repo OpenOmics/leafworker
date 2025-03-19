@@ -4,15 +4,17 @@
 # Python standard library
 from __future__ import print_function
 from shutil import copytree
-import os, re, json, sys, subprocess
+import os, re, json, sys, subprocess, textwrap
 
 # Local imports
-from utils import (git_commit_hash,
+from utils import (
+    git_commit_hash,
     join_jsons,
     fatal,
     which,
     exists,
-    err)
+    err
+)
 
 from . import version as __version__
 
@@ -113,19 +115,18 @@ def rename(filename):
     # key = regex to match string and value = how it will be renamed
     extensions = {
         # Matches: _R[12]_fastq.gz, _R[12].fastq.gz, _R[12]_fq.gz, etc.
-        ".R1.f(ast)?q.gz$": ".R1.fastq.gz",
-        ".R2.f(ast)?q.gz$": ".R2.fastq.gz",
+        # ".R1.f(ast)?q.gz$": ".R1.fastq.gz",
+        # ".R2.f(ast)?q.gz$": ".R2.fastq.gz",
         # Matches: _R[12]_001_fastq_gz, _R[12].001.fastq.gz, _R[12]_001.fq.gz, etc.
         # Capture lane information as named group
-        ".R1.(?P<lane>...).f(ast)?q.gz$": ".R1.fastq.gz",
-        ".R2.(?P<lane>...).f(ast)?q.gz$": ".R2.fastq.gz",
+        # ".R1.(?P<lane>...).f(ast)?q.gz$": ".R1.fastq.gz",
+        # ".R2.(?P<lane>...).f(ast)?q.gz$": ".R2.fastq.gz",
         # Matches: _[12].fastq.gz, _[12].fq.gz, _[12]_fastq_gz, etc.
-        "_1.f(ast)?q.gz$": ".R1.fastq.gz",
-        "_2.f(ast)?q.gz$": ".R2.fastq.gz"
+        # "_1.f(ast)?q.gz$": ".R1.fastq.gz",
+        # "_2.f(ast)?q.gz$": ".R2.fastq.gz"
     }
 
-    if (filename.endswith('.R1.fastq.gz') or
-        filename.endswith('.R2.fastq.gz')):
+    if (filename.endswith('.bam')):
         # Filename is already in the correct format
         return filename
 
@@ -139,16 +140,27 @@ def rename(filename):
             break # only rename once
 
     if not converted:
-        raise NameError("""\n\tFatal: Failed to rename provided input '{}'!
-        Cannot determine the extension of the user provided input file.
-        Please rename the file list above before trying again.
-        Here is example of acceptable input file extensions:
-          sampleName.R1.fastq.gz      sampleName.R2.fastq.gz
-          sampleName_R1_001.fastq.gz  sampleName_R2_001.fastq.gz
-          sampleName_1.fastq.gz       sampleName_2.fastq.gz
-        Please also check that your input files are gzipped?
-        If they are not, please gzip them before proceeding again.
-        """.format(filename, sys.argv[0])
+        fatal(textwrap.dedent(
+                """
+                Fatal: Failed to recognize the extension of the
+                following input file '{0}'.
+                
+                This pipeline only supports processing BAM files as
+                inputs. As so, input files must end with one of the
+                following extensions:
+                  • *.bam
+
+                Here is example of acceptable input file names:
+                  • sampleA.bam
+                  • sampleB_S2.bam
+                  • sampleC_003.bam
+                  • sampleD_grpX.bam
+
+                Please try again after providing BAM input files, and 
+                please check your BAM files end with the following
+                file extension: ".bam"
+                """.format(filename)
+            )
         )
 
     return filename

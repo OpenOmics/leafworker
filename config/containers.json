@@ -1,4 +1,5 @@
 {
     "images": {
+        "leafcutter": "docker://skchronicles/leafcutter:v0.1.0"
     }
 }

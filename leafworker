@@ -5,12 +5,11 @@
 ABOUT: This is the main entry for the pipeline.
 REQUIRES:
   - python>=3.6
-  - snakemake   (recommended>=6.0.0)
+  - snakemake   (recommended<=7.32.4)
   - singularity (recommended==latest)
 DISCLAIMER:
                     PUBLIC DOMAIN NOTICE
-        NIAID Collaborative Bioinformatics Resource (NCBR)
-   National Institute of Allergy and Infectious Diseases (NIAID)
+                          OpenOmics
 This software/database is a "United  States Government Work" under
 the terms of the United  States Copyright Act.  It was written as 
 part of the author's official duties as a United States Government
@@ -19,15 +18,15 @@ available to the public for use.
 Although all  reasonable  efforts have been taken  to ensure  the
 accuracy and reliability of the software and data, NCBR do not and
 cannot warrant the performance or results that may  be obtained by 
-using this software or data. NCBR and NIH disclaim all warranties,
-express  or  implied,  including   warranties   of   performance, 
+using this software or data. OpenOmics disclaim all warranties,
+express or implied, including warranties of performance, 
 merchantability or fitness for any particular purpose.
 Please cite the author and NIH resources like the "Biowulf Cluster" 
-in any work or product based on this material.
+for any work or product based on this material.
 USAGE:
   $ leafworker <command> [OPTIONS]
 EXAMPLE:
-  $ leafworker run --input *.R?.fastq.gz --output output/
+  $ leafworker run --input *.bam --output output/
 """
 
 # Python standard library
@@ -49,7 +48,8 @@ from src.utils import (
     hashed,
     permissions,
     check_cache,
-    require)
+    require
+)
 
 
 # Pipeline Metadata
@@ -58,7 +58,7 @@ __authors__ = 'Skyler Kuhn'
 __email__ = 'skyler.kuhn@nih.gov'
 __home__  =  os.path.dirname(os.path.abspath(__file__))
 _name = os.path.basename(sys.argv[0])
-_description = 'An awesome leafworker pipeline'
+_description = 'An awesome snakemake pipeline to run leafcutter'
 
 
 def unlock(sub_args):
@@ -249,18 +249,17 @@ def parsed_arguments(name, description):
         Optional arguments are shown in square brackets above.
 
         {3}{4}Description:{5}
-          To run the ...long pipeline name with your data raw data, please
-        provide a space seperated list of FastQ (globbing is supported) and an output 
-        directory to store results.
+          To run the leafcutter pipeline with your data raw data, please
+        provide a space seperated list of BAM files (globbing is supported),
+        and an output directory to store results.
 
         {3}{4}Required arguments:{5}
           --input INPUT [INPUT ...]
-                                Input FastQ file(s) to process. The pipeline does NOT
-                                support single-end data. FastQ files for one or more  
-                                samples can be provided. Multiple input FastQ files
-                                should be seperated by a space. Globbing for multiple
-                                file is also supported.
-                                  Example: --input .tests/*.R?.fastq.gz
+                                Input BAM file(s) to process. BAM files for one or
+                                more samples can be provided. Multiple input BAM
+                                files should be seperated by a space. Globbing for
+                                multiple file is also supported.
+                                  Example: --input .tests/*.bam
           --output OUTPUT
                                 Path to an output directory. This location is where
                                 the pipeline will create all of its output files, also
@@ -356,8 +355,8 @@ def parsed_arguments(name, description):
           module load singularity snakemake
 
           # Step 2A.) Dry-run the pipeline
-          ./{0} run --input .tests/*.R?.fastq.gz \\
-                         --output /data/$USER/output \\
+          ./{0} run --input .tests/*.bam \\
+                         --output leafworker_output \\
                          --mode slurm \\
                          --dry-run
 
@@ -365,8 +364,8 @@ def parsed_arguments(name, description):
           # The slurm mode will submit jobs to 
           # the cluster. It is recommended running 
           # the pipeline in this mode.
-          ./{0} run --input .tests/*.R?.fastq.gz \\
-                         --output /data/$USER/output \\
+          ./{0} run --input .tests/*.bam \\
+                         --output leafworker_output \\
                          --mode slurm
 
         {2}{3}Version:{4}
