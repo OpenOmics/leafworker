@@ -1,56 +1,59 @@
 <div align="center">
    
-  <h1>baseline 🔬</h1>
+  <h1>leafworker 🔬</h1>
   
-  **_long pipeline name_**
+  **_An awesome snakemake pipeline to run leafcutter_**
 
-  [![tests](https://github.com/OpenOmics/baseline/workflows/tests/badge.svg)](https://github.com/OpenOmics/baseline/actions/workflows/main.yaml) [![docs](https://github.com/OpenOmics/baseline/workflows/docs/badge.svg)](https://github.com/OpenOmics/baseline/actions/workflows/docs.yml) [![GitHub issues](https://img.shields.io/github/issues/OpenOmics/baseline?color=brightgreen)](https://github.com/OpenOmics/baseline/issues)  [![GitHub license](https://img.shields.io/github/license/OpenOmics/baseline)](https://github.com/OpenOmics/baseline/blob/main/LICENSE) 
+  [![tests](https://github.com/OpenOmics/leafworker/workflows/tests/badge.svg)](https://github.com/OpenOmics/leafworker/actions/workflows/main.yaml) [![docs](https://github.com/OpenOmics/leafworker/workflows/docs/badge.svg)](https://github.com/OpenOmics/leafworker/actions/workflows/docs.yml) [![GitHub issues](https://img.shields.io/github/issues/OpenOmics/leafworker?color=brightgreen)](https://github.com/OpenOmics/leafworker/issues)  [![GitHub license](https://img.shields.io/github/license/OpenOmics/leafworker)](https://github.com/OpenOmics/leafworker/blob/main/LICENSE) 
   
   <i>
-    This is the home of the pipeline, baseline. Its long-term goals: to accurately ...insert goal, to infer ...insert goal, and to boldly ...insert goal like no pipeline before!
+    This is the home of the pipeline, leafworker. Its long-term goals: to make running leafcutter easier, more reproducible, and more scalable.
   </i>
 </div>
 
 ## Overview
-Welcome to baseline! Before getting started, we highly recommend reading through [baseline's documentation](https://openomics.github.io/baseline/).
 
-The **`./baseline`** pipeline is composed several inter-related sub commands to setup and run the pipeline across different systems. Each of the available sub commands perform different functions: 
+Welcome to leafworker! Before getting started, we highly recommend reading through [leafworker's documentation](https://openomics.github.io/leafworker/). This pipeline is a wrapper around the [leafcutter<sup>0</sup>](https://github.com/davidaknowles/leafcutter/tree/master), a tool for the analysis of RNA-seq data to identify and quantify alternative splicing events. The pipeline is designed to be highly scalable, reproducible, and easy to use. If you use this pipeline, _please do not forget to cite [leafcutter](https://www.nature.com/articles/s41588-017-0004-9)_.
 
- * [<code>baseline <b>run</b></code>](https://openomics.github.io/baseline/usage/run/): Run the baseline pipeline with your input files.
- * [<code>baseline <b>unlock</b></code>](https://openomics.github.io/baseline/usage/unlock/): Unlocks a previous runs output directory.
- * [<code>baseline <b>install</b></code>](https://openomics.github.io/baseline/usage/install/): Download reference files locally.
- * [<code>baseline <b>cache</b></code>](https://openomics.github.io/baseline/usage/cache/): Cache remote resources locally, coming soon!
+The **`./leafworker`** pipeline is composed several inter-related sub commands to setup and run the pipeline across different systems. Each of the available sub commands perform different functions: 
 
-**baseline** is a comprehensive ...insert long description. It relies on technologies like [Singularity<sup>1</sup>](https://singularity.lbl.gov/) to maintain the highest-level of reproducibility. The pipeline consists of a series of data processing and quality-control steps orchestrated by [Snakemake<sup>2</sup>](https://snakemake.readthedocs.io/en/stable/), a flexible and scalable workflow management system, to submit jobs to a cluster.
+ * [<code>leafworker <b>run</b></code>](https://openomics.github.io/leafworker/usage/run/): Run the leafworker pipeline with your input files.
+ * [<code>leafworker <b>unlock</b></code>](https://openomics.github.io/leafworker/usage/unlock/): Unlocks a previous runs output directory.
+ * [<code>leafworker <b>install</b></code>](https://openomics.github.io/leafworker/usage/install/): Download reference files locally.
+ * [<code>leafworker <b>cache</b></code>](https://openomics.github.io/leafworker/usage/cache/): Cache remote resources locally, coming soon!
 
-The pipeline is compatible with data generated from Illumina short-read sequencing technologies. As input, it accepts a set of FastQ files and can be run locally on a compute instance or on-premise using a cluster. A user can define the method or mode of execution. The pipeline can submit jobs to a cluster using a job scheduler like SLURM (more coming soon!). A hybrid approach ensures the pipeline is accessible to all users.
+**leafworker** is a pipeline to make running leafcutter easier, more reproducible, and more scalable. It relies on technologies like [Singularity<sup>1</sup>](https://singularity.lbl.gov/) to maintain the highest-level of reproducibility. The pipeline consists of a series of data processing and quality-control steps orchestrated by [Snakemake<sup>2</sup>](https://snakemake.readthedocs.io/en/stable/), a flexible and scalable workflow management system, to submit jobs to a cluster.
 
-Before getting started, we highly recommend reading through the [usage](https://openomics.github.io/baseline/usage/run/) section of each available sub command.
+The pipeline is compatible with data generated from Illumina short-read sequencing technologies. As input, it accepts a set of BAM files and can be run locally on a compute instance or on-premise using a cluster. A user can define the method or mode of execution. The pipeline can submit jobs to a cluster using a job scheduler like SLURM (more coming soon!). A hybrid approach ensures the pipeline is accessible to all users.
 
-For more information about issues or trouble-shooting a problem, please checkout our [FAQ](https://openomics.github.io/baseline/faq/questions/) prior to [opening an issue on Github](https://github.com/OpenOmics/baseline/issues).
+Before getting started, we highly recommend reading through the [usage](https://openomics.github.io/leafworker/usage/run/) section of each available sub command.
+
+For more information about issues or trouble-shooting a problem, please checkout our [FAQ](https://openomics.github.io/leafworker/faq/questions/) prior to [opening an issue on Github](https://github.com/OpenOmics/leafworker/issues).
 
 ## Dependencies
-**Requires:** `singularity>=3.5`  `snakemake>=6.0`
+
+**Requires:** `singularity>=3.5`  `snakemake<=7.32.4`
 
 At the current moment, the pipeline uses a mixture of enviroment modules and docker images; however, this will be changing soon! In the very near future, the pipeline will only use docker images. With that being said, [snakemake](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html) and [singularity](https://singularity.lbl.gov/all-releases) must be installed on the target system. Snakemake orchestrates the execution of each step in the pipeline. To guarantee the highest level of reproducibility, each step of the pipeline will rely on versioned images from [DockerHub](https://hub.docker.com/orgs/nciccbr/repositories). Snakemake uses singularity to pull these images onto the local filesystem prior to job execution, and as so, snakemake and singularity will be the only two dependencies in the future.
 
 ## Installation
+
 Please clone this repository to your local filesystem using the following command:
 ```bash
 # Clone Repository from Github
-git clone https://github.com/OpenOmics/baseline.git
+git clone https://github.com/OpenOmics/leafworker.git
 # Change your working directory
-cd baseline/
+cd leafworker/
 # Add dependencies to $PATH
 # Biowulf users should run
 module load snakemake singularity
 # Get usage information
-./baseline -h
+./leafworker -h
 ```
 
 ## Contribute 
-This site is a living document, created for and by members like you. baseline is maintained by the members of OpenOmics and is improved by continous feedback! We encourage you to contribute new content and make improvements to existing content via pull request to our [GitHub repository](https://github.com/OpenOmics/baseline).
 
+This site is a living document, created for and by members like you. leafworker is maintained by the members of OpenOmics and is improved by continous feedback! We encourage you to contribute new content and make improvements to existing content via pull request to our [GitHub repository](https://github.com/OpenOmics/leafworker).
 
 ## Cite
 
@@ -74,35 +77,9 @@ Citation coming soon!
 
 </details>
 
-<!---
-# Setup from baseline template
-```bash
-# Add your new pipeline name here,
-# whatever you set here will be the
-# name of your cli too. Please make 
-# sure it does not contain any spaces
-# It should only contain, alpha-numeric
-# characters and hyphens. 
-new_pipeline_name="add_your_pipeline_name_here"
-
-# Dry-run: This step automagically builds a 
-# command to update any instances of the string
-# baseline with your new pipeline name, please
-# make sure to set the variable above to whatever
-# you want to name the pipeline and CLI.
-find . -type f -not -path '*/.baseline_version' -not -path '*./CHANGELOG.md' -not -path '*/.git/*' -exec grep 'baseline' {} /dev/null \; | awk -F ':' '{print $1}' | sort | uniq | sed "s/^/sed -i 's@baseline@$new_pipeline_name@g' /g"
-
-# Updates any instances of the string baseline
-# with the name you decided/set above.
-find . -type f -not -path '*/.baseline_version' -not -path '*./CHANGELOG.md' -not -path '*/.git/*' -exec grep 'baseline' {} /dev/null \; | awk -F ':' '{print $1}' | sort | uniq | sed "s/^/sed -i 's@baseline@$new_pipeline_name@g' /g" | bash
-
-# Rename the cli or main entry point 
-# of the pipeline
-mv baseline "$new_pipeline_name"
-```
--->
-
 
 ## References
+
+<sup>**0.** Li, Y. I., Knowles, D. A., Humphrey, J., Barbeira, A. N., Dickinson, S. P., Im, H. K., & Pritchard, J. K. (2018). Annotation-free quantification of RNA splicing using LeafCutter. Nature genetics, 50(1), 151–158. https://doi.org/10.1038/s41588-017-0004-9</sup>   
 <sup>**1.**  Kurtzer GM, Sochat V, Bauer MW (2017). Singularity: Scientific containers for mobility of compute. PLoS ONE 12(5): e0177459.</sup>  
 <sup>**2.**  Koster, J. and S. Rahmann (2018). "Snakemake-a scalable bioinformatics workflow engine." Bioinformatics 34(20): 3600.</sup>  
