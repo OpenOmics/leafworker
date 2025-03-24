@@ -1,27 +1,45 @@
 # Python standard library
 from os.path import join
-from os import listdir
-import os, sys, json
-
+import os, json
 # 3rd party imports from pypi
-from snakemake.workflow import workflow as wf_api
-from snakemake.utils import R
-
+from snakemake.io import expand
 # Local imports
 from scripts.common import (
     allocated,
     provided, 
-    references,
     str_bool
 )
+
+
+# Global workflow variables
+configfile: 'config.json'                      # Generated from user input and config/*.json
+bindpath = config['bindpaths']                 # Singularity paths to bind to the container
+samples  = config['samples']                   # Base name of input samples
+workpath = config['project']['workpath']       # Pipeline's output directory
+
+# Read in resource information,
+# containing information about 
+# threads, mem, walltimes, etc.
+# TODO: Add handler for when the
+# mode is set to local.
+with open(join(workpath, 'config', 'cluster.json')) as fh:
+    cluster = json.load(fh)
 
 
 # Final ouput files of the pipeline
 rule all:
     input:
-        []
+        # BAM to BED output file,
+        # @imported from rules/leafcutter.smk
+        # @output of rule bam2bed
+        expand(join(workpath,"temp","{name}.bed"),name=samples),
+        # BED to Junction output file,
+        # @imported from rules/leafcutter.smk
+        # @output of rule bed2junc
+        expand(join(workpath,"temp","{name}.junc"),name=samples),
 
 
 # Import rules 
+include: join("rules", "leafcutter.smk")
 include: join("rules", "common.smk")
 include: join("rules", "hooks.smk")
