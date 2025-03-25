@@ -26,17 +26,25 @@ with open(join(workpath, 'config', 'cluster.json')) as fh:
     cluster = json.load(fh)
 
 
-# Final ouput files of the pipeline
+# Final output files of the pipeline
 rule all:
     input:
         # BAM to BED output file,
         # @imported from rules/leafcutter.smk
-        # @output of rule bam2bed
+        # @output of rule leafcutter_bam2bed
         expand(join(workpath,"temp","{name}.bed"),name=samples),
         # BED to Junction output file,
         # @imported from rules/leafcutter.smk
-        # @output of rule bed2junc
-        expand(join(workpath,"temp","{name}.junc"),name=samples),
+        # @output of rule leafcutter_bed2junc
+        expand(join(workpath,"junctions","{name}.junc"),name=samples),
+        # Gathered junction file,
+        # @imported from rules/leafcutter.smk
+        # @output of rule leafcutter_gatherjuncs
+        join(workpath, "temp", "junction_files.txt"),
+        # Clustering output file,
+        # @imported from rules/leafcutter.smk
+        # @output of rule leafcutter_clusterjuncs
+        join(workpath, "junctions", "leafcutter_perind.counts.gz"),
 
 
 # Import rules 
