@@ -39,13 +39,12 @@ import argparse  # potential python3 3rd party package, added in python/3.5
 # Local imports
 from src import version 
 from src.run import init, setup, bind, dryrun, runner
-from src.shells import bash 
+from src.files import groups, contrasts
 from src.utils import (
     Colors,
     err,
     exists,
     fatal,
-    hashed,
     permissions,
     check_cache,
     require
@@ -98,6 +97,7 @@ def run(sub_args):
     # The pipelines has only two requirements:
     # snakemake and singularity 
     require(['snakemake', 'singularity'], ['snakemake', 'singularity'])
+    c = Colors()
 
     # Step 1. Initialize working directory,
     # copy over required resources to run 
@@ -117,6 +117,7 @@ def run(sub_args):
         # Set the default tmpdir
         # to the output directory
         sub_args.tmp_dir = os.path.join(sub_args.output, "temp", "$SLURM_JOBID" )
+    
     config = setup(sub_args, 
         ifiles = input_files,
         repo_path = git_repo,
@@ -131,6 +132,51 @@ def run(sub_args):
     )
 
     config['bindpaths'] = bindpaths
+
+    # Add groups.tsv and contrast.tsv file
+    # information, groups.tsv file defines
+    # relationships between samples and
+    # their group(s). The contrast.tsv file
+    # defines comparsions to be made across
+    # different groups of samples. Add this
+    # information to config.json
+    config["project"]["groups"] = {}
+    config["project"]["contrast"] = []
+    if (sub_args.groups and sub_args.contrasts):
+        group2samples = groups(sub_args.groups, delim='\t')
+        # Adding some basic validation to ensure
+        # all the samples in the groups.tsv are
+        # have bam files (checking for typos)
+        groups_samples = []
+        for samplelist in group2samples.values():
+            for sample in samplelist:
+                if sample not in groups_samples:
+                    groups_samples.append(sample)
+        # Check for things in the groups file
+        # that don't have input bams
+        missing_inputs = []
+        for s in groups_samples:
+            if s not in config["samples"]:
+                # Collect all samples list in the groups
+                # file that do not have input bam files
+                missing_inputs.append(s)
+        # Check what's missing and report the problem
+        if missing_inputs:
+            # Report missing BAM files that
+            # were not provided and display a
+            # helpful message to fix problem
+            err(
+                "{}{}Error: --groups file contains the following samples with missing BAM files! {}".format(
+                    c.bg_red, c.white, c.end
+                )
+            )
+            fatal("  └── {}".format(missing_inputs))
+
+        config["project"]["groups"] = group2samples
+        # Add contrast information to config.json
+        user_defined_groups = list(group2samples.keys())
+        comparsions = contrasts(sub_args.contrasts, user_defined_groups)
+        config["project"]["contrast"] = comparsions
 
     # Step 4. Save config to output directory
     with open(os.path.join(sub_args.output, 'config.json'), 'w') as fh:
@@ -247,8 +293,10 @@ def parsed_arguments(name, description):
                 [--dry-run] [--job-name JOB_NAME] [--mode {{slurm,local}}] \\
                 [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \\
                 [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \\
+                [--groups GROUPS] [--contrasts CONTRASTS] \\
                 --input INPUT [INPUT ...] \\
-                --output OUTPUT
+                --output OUTPUT \\
+                --gtf GTF
 
         Optional arguments are shown in square brackets above.
 
@@ -271,9 +319,60 @@ def parsed_arguments(name, description):
                                 provided working directory has not been initialized,
                                 it will be created automatically.
                                   Example: --output /data/$USER/output
+          --gtf GTF             
+                                Annotation file in GTF format. This annotation file is
+                                used by leafcutter to identify splice junctions within
+                                the transcriptome. 
 
         {3}{4}Analysis options:{5}
-          ...coming soon!
+        {6}@Differential splicing analysis{5}
+          --groups GROUPS
+                                Groups file. This tab delimited file is used to pair
+                                each sample to a group. Group information is used to
+                                setup comparsions across different groups of samples
+                                to find differential Splicing. This tab-delimited file
+                                consists of two columns containing the base name of
+                                each sample AND the name of their group(s), where 
+                                multiple groups seperated by a comma. The header of
+                                this file needs to be Sample for the column containing
+                                the sample base names and Group for the column with
+                                the group names. The base name of a given sample can
+                                be determined by removing its file extension from the
+                                sample's bam file. 
+                                For example: WT_S4.bam becomes WT_S4 in the groups
+                                file. A group can represent anything from a timepoint,
+                                an experimental condition, a treatment, or disease
+                                state, etc. 
+                                Please note that groups are should be composed of
+                                alphanumeric characters, cannot startwith a number,
+                                and cannot contain any '-' characters. Groups can
+                                contain '_' characters. To perform differential
+                                splicing analysis, a groups and contrast file must
+                                be provided.
+                                  Contents of example groups file:
+                                    Sample	Group
+                                    WT_S1	G1,G3
+                                    WT_S2	G1,G3
+                                    WT_S3	G1
+                                    WT_S4	G2,G4
+                                    WT_S5	G2,G4
+                                    WT_S6	G2
+                                  Example: --groups .tests/groups.tsv   
+          --contrasts CONTRASTS
+                                Contrasts file. This tab delimited file is used to setup
+                                comparisons within different groups of samples. Please 
+                                see the --groups option above for more information about 
+                                how to define groups within a set of samples. This file
+                                consists of two columns containing the names of each 
+                                group to compare. The names defined in this file must 
+                                also exist in the groups file. To perform differential
+                                splicing analysis, a groups and contrast file must
+                                be provided.
+                                  Contents of example contrasts file:
+                                    G2  G1
+                                    G4  G1
+                                    G4  G3
+                                  Example: --contrasts .tests/contrasts.tsv 
 
         {3}{4}Orchestration options:{5}
           --mode {{slurm,local}}  
@@ -404,6 +503,15 @@ def parsed_arguments(name, description):
         help = argparse.SUPPRESS
     )
 
+    # Annotation in GTF format
+    subparser_run.add_argument(
+        '--gtf',
+        # Check if the file exists and if it is readable
+        type = lambda file: permissions(parser, file, os.R_OK),
+        required = True,
+        help = argparse.SUPPRESS
+    )
+
     # Optional Arguments
     # Add custom help message
     subparser_run.add_argument(
@@ -413,7 +521,27 @@ def parsed_arguments(name, description):
     )
     
     # Analysis options
-    # ... add here
+    # Groups TSV file to map
+    # each sample to a group
+    subparser_run.add_argument(
+        "--groups",
+        # Check if the file exists and if it is readable
+        type=lambda file: permissions(parser, file, os.R_OK),
+        required=False,
+        default=None,
+        help=argparse.SUPPRESS,
+    )
+
+    # Contrasts file to find
+    # differential splicing 
+    subparser_run.add_argument(
+        "--contrasts",
+        # Check if the file exists and if it is readable
+        type=lambda file: permissions(parser, file, os.R_OK),
+        required=False,
+        default=None,
+        help=argparse.SUPPRESS,
+    )
 
     # Orchestration Options
     # Execution Method, run locally 

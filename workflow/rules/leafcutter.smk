@@ -144,3 +144,32 @@ rule leafcutter_clusterjuncs:
         -r {params.outd} \\
         -p 0.001
     """
+
+
+rule leafcutter_clustergenes:
+    """
+    Data processing step to associate splicing clusters to genes.
+    @Input:
+        Junctions file cluster across all samples (indirect-gather-singleton)
+    @Output:
+        Text file containing gene splicing clusters 
+    """
+    input:
+        cnt   = join(workpath, "junctions", "leafcutter_perind.counts.gz"),
+        gtf   = gtf_file
+    output:
+        txt   = join(workpath, "junctions", "leafcutter.clu2gene.txt"),
+    params:
+        rname = "clstgene",
+        outd  = join(workpath, "junctions"),
+    resources:
+        mem   = allocated("mem",  "leafcutter_clustergenes", cluster),
+        time  = allocated("time", "leafcutter_clustergenes", cluster),
+    threads: int(allocated("threads", "leafcutter_clustergenes", cluster))
+    container: config["images"]["leafcutter"]
+    shell: """
+    # Get gene splicing clusters
+    get_cluster_gene.py \\
+        {input.gtf} \\
+        {input.cnt}
+    """

@@ -16,6 +16,15 @@ configfile: 'config.json'                      # Generated from user input and c
 bindpath = config['bindpaths']                 # Singularity paths to bind to the container
 samples  = config['samples']                   # Base name of input samples
 workpath = config['project']['workpath']       # Pipeline's output directory
+gtf_file = config['options']['gtf']            # File for annotating splice junctions
+
+# Differential splicing options
+# Dictionary mapping each group (key) 
+# to a list of samples (value)
+group2samples = config['project']['groups']    # i.e. {"G1": ["S1", "S2"], "G2": ["S3", "S4"], ...}
+# Nested list containing each 
+# comparsion of interest   
+contrasts     = config['project']['contrast'] # i.e. [["G2", "G2"], ...]
 
 # Read in resource information,
 # containing information about 
@@ -43,8 +52,12 @@ rule all:
         join(workpath, "temp", "junction_files.txt"),
         # Clustering output file,
         # @imported from rules/leafcutter.smk
-        # @output of rule leafcutter_clusterjuncs
+        # @output of rule leafcutter_clusterjuncs  
         join(workpath, "junctions", "leafcutter_perind.counts.gz"),
+        # Clustering output file,
+        # @imported from rules/leafcutter.smk
+        # @output of rule leafcutter_clustergene
+        join(workpath, "junctions", "leafcutter.clu2gene.txt"),
 
 
 # Import rules 
