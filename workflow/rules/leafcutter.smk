@@ -196,26 +196,24 @@ rule leafcutter_mkgroups:
     params:
         rname = "grpsfile",
         # Build groups TSV file with
-        # BAM file to group mappings,
+        # sample to group mappings,
         # Example Groups file:
-        # S1.bam	WT
-        # S2.bam	WT
-        # S3.bam	KO
-        # S4.bam	KO
+        # S1	WT
+        # S2	WT
+        # S3	KO
+        # S4	KO
         # Building string for cntrl
-        # BAM files to their group
+        # sample to their group
         ctrl2grp = lambda w: "\n".join([
             "{0}\t{1}".format(
-                "{0}.bam".format(s),
-                str(w.control)
+                str(s), str(w.control)
             ) for s in group2samples[w.control]
         ]),
         # Building string for case
-        # BAM files to their group
+        # sample to their group
         case2grp = lambda w: "\n".join([
             "{0}\t{1}".format(
-                "{0}.bam".format(s),
-                str(w.case)
+                str(s), str(w.case)
             ) for s in group2samples[w.case]
         ]),
     resources:
