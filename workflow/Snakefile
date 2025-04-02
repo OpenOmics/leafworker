@@ -62,12 +62,19 @@ rule all:
         # @output of rule leafcutter_clustergene
         join(workpath, "junctions", "leafcutter.clu2gene.txt"),
         # Create sample sheet containing BAM
-        # to groups information for differential
+        # to groups information for differential,
         # splicing analysis
         # @imported from rules/leafcutter.smk
         # @output of rule leafcutter_mkgroups
         expand(
             join(workpath, "differential_splicing", "{case}_vs_{control}", "groups_file.tsv"), 
+            zip, case=case_groups, control=ctrl_groups
+        ),
+        # Perform differential splicing analysis,
+        # @imported from rules/leafcutter.smk
+        # @output of rule leafcutter_diffsplicing
+        expand(
+            join(workpath, "differential_splicing", "{case}_vs_{control}", "diff_splicing_cluster_significance.txt"), 
             zip, case=case_groups, control=ctrl_groups
         ),
 

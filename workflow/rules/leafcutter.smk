@@ -234,3 +234,39 @@ rule leafcutter_mkgroups:
         {params.case2grp}
         EOF
         """)
+
+
+rule leafcutter_diffsplicing:
+    """
+    Data-processing step to perform differential splicing analysis using 
+    leafcutter's differential splicing script.
+    @Input:
+        Groups file for a given comparison (indirect-gather-per-contrast)
+    @Output:
+        Differential splicing results
+    """
+    input:
+        cnt = join(workpath, "junctions", "leafcutter_perind.counts.gz"),
+        grp = join(workpath, "differential_splicing", "{case}_vs_{control}", "groups_file.tsv"),
+    output:
+        res = join(workpath, "differential_splicing", "{case}_vs_{control}", "diff_splicing_cluster_significance.txt"),
+    params:
+        rname  = "diffsplice",
+        prefix = join(workpath, "differential_splicing", "{case}_vs_{control}", "diff_splicing"),
+    resources:
+        mem   = allocated("mem",  "leafcutter_diffsplicing", cluster),
+        time  = allocated("time", "leafcutter_diffsplicing", cluster),
+    threads: int(allocated("threads", "leafcutter_diffsplicing", cluster))
+    container: config["images"]["leafcutter"]
+    shell: """
+    # Run differential splicing analysis for:
+    #   {wildcards.case} vs. {wildcards.control}
+    leafcutter_ds.R \\
+        --num_threads {threads} \\
+        --min_samples_per_intron 3 \\
+        --timeout 1200 \\
+        --seed 12345 \\
+        --output_prefix {params.prefix} \\
+        {input.cnt} \\
+        {input.grp}
+    """
