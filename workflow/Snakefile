@@ -25,6 +25,9 @@ group2samples = config['project']['groups']    # i.e. {"G1": ["S1", "S2"], "G2":
 # Nested list containing each 
 # comparsion of interest   
 contrasts     = config['project']['contrast'] # i.e. [["G2", "G2"], ...]
+case_groups  = [g1 for g1,g2 in contrasts]
+ctrl_groups  = [g2 for g1,g2 in contrasts]
+
 
 # Read in resource information,
 # containing information about 
@@ -58,6 +61,15 @@ rule all:
         # @imported from rules/leafcutter.smk
         # @output of rule leafcutter_clustergene
         join(workpath, "junctions", "leafcutter.clu2gene.txt"),
+        # Create sample sheet containing BAM
+        # to groups information for differential
+        # splicing analysis
+        # @imported from rules/leafcutter.smk
+        # @output of rule leafcutter_mkgroups
+        expand(
+            join(workpath, "differential_splicing", "{case}_vs_{control}", "groups_file.tsv"), 
+            zip, case=case_groups, control=ctrl_groups
+        ),
 
 
 # Import rules 

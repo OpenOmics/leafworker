@@ -1,4 +1,6 @@
 # Functions and rules for running leafcutter
+# Standard Library
+import textwrap
 # Local imports
 from scripts.common import (
     allocated
@@ -173,3 +175,62 @@ rule leafcutter_clustergenes:
         {input.gtf} \\
         {input.cnt}
     """
+
+
+rule leafcutter_mkgroups:
+    """
+    Data processing step to create a groups file for leafcutter's 
+    differential splicing script. This is a tab-delimited file
+    containing two columns: the path to a sample's bam file and
+    it's group assignment. The first group in the file  will
+    represent the baseline group in a contrast. 
+    @Input:
+        Junctions file cluster across all samples (indirect-gather-per-contrast)
+    @Output:
+        Groups file for a given comparison
+    """
+    input:
+        cnt = join(workpath, "junctions", "leafcutter_perind.counts.gz"),
+    output:
+        grp = join(workpath, "differential_splicing", "{case}_vs_{control}", "groups_file.tsv"),
+    params:
+        rname = "grpsfile",
+        # Build groups TSV file with
+        # BAM file to group mappings,
+        # Example Groups file:
+        # S1.bam	WT
+        # S2.bam	WT
+        # S3.bam	KO
+        # S4.bam	KO
+        # Building string for cntrl
+        # BAM files to their group
+        ctrl2grp = lambda w: "\n".join([
+            "{0}\t{1}".format(
+                join(workpath, "{0}.bam".format(s)),
+                str(w.control)
+            ) for s in group2samples[w.control]
+        ]),
+        # Building string for case
+        # BAM files to their group
+        case2grp = lambda w: "\n".join([
+            "{0}\t{1}".format(
+                join(workpath, "{0}.bam".format(s)),
+                str(w.case)
+            ) for s in group2samples[w.case]
+        ]),
+    resources:
+        mem   = allocated("mem",  "leafcutter_groupsfile", cluster),
+        time  = allocated("time", "leafcutter_groupsfile", cluster),
+    threads: int(allocated("threads", "leafcutter_groupsfile", cluster))
+    container: config["images"]["leafcutter"]
+    shell:
+        # Dedent shell command due the
+        # use of EOF statements
+        textwrap.dedent("""
+        # Create groups file for a given comparison,
+        # First group becomes baseline in contrast
+        cat << EOF > {output.grp}
+        {params.ctrl2grp}
+        {params.case2grp}
+        EOF
+        """)
