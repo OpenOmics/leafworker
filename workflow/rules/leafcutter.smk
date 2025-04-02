@@ -206,7 +206,7 @@ rule leafcutter_mkgroups:
         # BAM files to their group
         ctrl2grp = lambda w: "\n".join([
             "{0}\t{1}".format(
-                join(workpath, "{0}.bam".format(s)),
+                "{0}.bam".format(s),
                 str(w.control)
             ) for s in group2samples[w.control]
         ]),
@@ -214,7 +214,7 @@ rule leafcutter_mkgroups:
         # BAM files to their group
         case2grp = lambda w: "\n".join([
             "{0}\t{1}".format(
-                join(workpath, "{0}.bam".format(s)),
+                "{0}.bam".format(s),
                 str(w.case)
             ) for s in group2samples[w.case]
         ]),
