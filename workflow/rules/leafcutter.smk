@@ -127,6 +127,7 @@ rule leafcutter_clusterjuncs:
         jnt   = join(workpath, "temp", "junction_files.txt"),
     output:
         cnt   = join(workpath, "junctions", "leafcutter_perind.counts.gz"),
+        num   = join(workpath, "junctions", "leafcutter_perind_numers.counts.gz"),
     params:
         rname = "clstjuncs",
         outd  = join(workpath, "junctions"),
@@ -190,7 +191,7 @@ rule leafcutter_mkgroups:
         Groups file for a given comparison
     """
     input:
-        cnt = join(workpath, "junctions", "leafcutter_perind.counts.gz"),
+        num = join(workpath, "junctions", "leafcutter_perind_numers.counts.gz"),
     output:
         grp = join(workpath, "differential_splicing", "{case}_vs_{control}", "groups_file.tsv"),
     params:
@@ -244,13 +245,20 @@ rule leafcutter_diffsplicing:
         Differential splicing results
     """
     input:
-        cnt = join(workpath, "junctions", "leafcutter_perind.counts.gz"),
+        num = join(workpath, "junctions", "leafcutter_perind_numers.counts.gz"),
         grp = join(workpath, "differential_splicing", "{case}_vs_{control}", "groups_file.tsv"),
     output:
         res = join(workpath, "differential_splicing", "{case}_vs_{control}", "diff_splicing_cluster_significance.txt"),
     params:
         rname  = "diffsplice",
         prefix = join(workpath, "differential_splicing", "{case}_vs_{control}", "diff_splicing"),
+        # Resolve min samples per intron
+        # to 3 for the analysis unless 
+        # there is a group with 2 samples
+        # in which case set to 2
+        min_samples = lambda w: 2 if min(
+            len(group2samples[w.case]), len(group2samples[w.control])
+        ) < 3 else 3, 
     resources:
         mem   = allocated("mem",  "leafcutter_diffsplicing", cluster),
         time  = allocated("time", "leafcutter_diffsplicing", cluster),
@@ -261,10 +269,10 @@ rule leafcutter_diffsplicing:
     #   {wildcards.case} vs. {wildcards.control}
     leafcutter_ds.R \\
         --num_threads {threads} \\
-        --min_samples_per_intron 3 \\
+        --min_samples_per_intron {params.min_samples} \\
         --timeout 1200 \\
         --seed 12345 \\
         --output_prefix {params.prefix} \\
-        {input.cnt} \\
+        {input.num} \\
         {input.grp}
     """
