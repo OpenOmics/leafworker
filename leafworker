@@ -346,17 +346,28 @@ def parsed_arguments(name, description):
                                 Please note that groups are should be composed of
                                 alphanumeric characters, cannot startwith a number,
                                 and cannot contain any '-' characters. Groups can
-                                contain '_' characters. To perform differential
-                                splicing analysis, a groups and contrast file must
-                                be provided.
+                                contain '_' characters. In the groups file the 1st
+                                & 2nd columns are required, where the 1st column must
+                                be called Sample and the 2nd column must be called
+                                Group. Any additional columns after the Sample &
+                                Group columns are optional. The extra column will
+                                be used for controlling covariates. This could be
+                                batches, sex, age, etc. Please note that any numeric
+                                values will be modeled as continuous variables.
+                                As so, please ensure any categorical values start
+                                with a letter. To perform differential splicing 
+                                analyses, a groups & contrast file must be provided.  
                                   Contents of example groups file:
-                                    Sample	Group
-                                    WT_S1	G1,G3
-                                    WT_S2	G1,G3
-                                    WT_S3	G1
-                                    WT_S4	G2,G4
-                                    WT_S5	G2,G4
-                                    WT_S6	G2
+                                    Sample	Group	Sex
+                                    WT_S1	G1,G3	M
+                                    WT_S2	G1,G3	F
+                                    WT_S3	G1,G3	M
+                                    WT_S4	G1,G3	F
+                                    WT_S5	G1,G4	M
+                                    WT_S6	G2,G4	F
+                                    WT_S7	G2,G4	M
+                                    WT_S8	G2,G4	F
+                                    WT_S9	G2,G4	M
                                   Example: --groups .tests/groups.tsv   
           --contrasts CONTRASTS
                                 Contrasts file. This tab delimited file is used to setup
@@ -369,9 +380,9 @@ def parsed_arguments(name, description):
                                 splicing analysis, a groups and contrast file must
                                 be provided.
                                   Contents of example contrasts file:
-                                    G2  G1
-                                    G4  G1
-                                    G4  G3
+                                    G2	G1
+                                    G4	G1
+                                    G4	G3
                                   Example: --contrasts .tests/contrasts.tsv 
 
         {3}{4}Orchestration options:{5}

@@ -3,7 +3,7 @@
 
 # Python standard library
 from __future__ import print_function
-import os, sys, re
+import os, sys, re, textwrap
 
 # Local imports
 from utils import (
@@ -58,7 +58,7 @@ def check_file(file, ncols, delim='\t'):
         for line in fh:
             linenumber += 1
             linelist = [l.strip() for l in line.split(delim) if l.strip()]
-            if len(linelist) == ncols or len(linelist) == 0:
+            if len(linelist) <= ncols or len(linelist) == 0:
                 # Skip over lines with the expected
                 # number of columns and empty line
                 continue
@@ -100,34 +100,67 @@ def index(file, delim='\t', required = ['Sample', 'Group']):
     # and it has the expected number of 
     # columns, i.e 2 
     header = check_file(file = file, ncols = len(required), delim = delim)
-    # Parse the header to get the index of required fields
-    # Get index of Sample, Group
-    # columns for parsing the file
-    warning = False 
+    # Parse the header to get the index of 
+    # required fields: i.e Sample, Group
+    # columns for parsing later
+    error = False 
     for col in required:
         try: indices[col] = header.index(col)
         except ValueError:
-            warning = True 
+            error = True 
             # Missing column names or header in groups file
             # This can also occur if the file is not actually 
             # a tab delimited file.
             # TODO: Add a check to see if the file is actually
             # a tab delimited file, i.e. a TSV file.
             has_header = False
-            err('{}{}Warning: {} is missing the following column name: {} {}'.format(
-                    c.bg_yellow, c.black, file, col, c.end
+            err('{}{}Error: groups file is missing the following required column name: {}{}'.format(
+                    c.bg_red, c.white, col, c.end
                 )
             )
-    if warning:
-        err('{}{}  └── Making assumptions about columns in the groups file... 1=Sample, 2=Group {}'.format(
-                c.bg_yellow, c.black,c.end
-            )
-        )
-        # Setting column indexes to the following defaults:
-        # 0 = Sample basename column
-        # 1 = Group information column
-        for i in range(len(required)):
-            indices[required[i]] = i
+
+    # Check for errors and properly
+    # formatted groups file
+    if error or (indices.get('Sample',-1)!=0 or indices.get('Group',-1)!=1):
+        # Exit with non-zero exit code
+        fatal(textwrap.dedent(
+            """
+            # Fatal: Detected improperly formatted groups file!
+            # Here example of a groups file where:
+            #  • 1st column = Sample (required): Base name of a 
+            #                 sample's BAM file without ".bam"
+            #                 file extension.
+            #  • 2nd column = Group (required): A sample's group
+            #                 information, any group listed here
+            #                 must match information provided in
+            #                 the contrasts file.
+            #  • Nth column = Extra Covariates (optional): Any
+            #                 additional columns after the 1st & 
+            #                 2nd column are used to control for
+            #                 confounders or covariates during 
+            #                 differential splicing analysis.
+            #                 Note: Numeric values will be 
+            #                 treated as continuous variables so
+            #                 please ensure any categorical values
+            #                 start with a letter to ensure they
+            #                 are modelled correctly!
+            # Please ensure your file is tab delimited,
+            # check your columns names for the first and
+            # second columns, i.e 1st=Sample, 2nd=Group.
+            # Please see example below:
+            Sample	Group	Sex
+            Sample_1	G1,G4	F
+            Sample_2	G1,G4	M
+            Sample_3	G1,G4	F
+            Sample_4	G2,G4	M
+            Sample_5	G2,G5	F
+            Sample_6	G2,G5	M
+            Sample_7	G3,G5	F
+            Sample_8	G3,G5	M
+            Sample_9	G3	F
+            Sample_10	G3	M
+            """
+        ))
 
     return indices, has_header
 
