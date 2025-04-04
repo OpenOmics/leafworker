@@ -196,13 +196,6 @@ rule leafcutter_mkgroups:
         grp = join(workpath, "differential_splicing", "{case}_vs_{control}", "groups_file.tsv"),
     params:
         rname = "grpsfile",
-        # Build groups TSV file with
-        # sample to group mappings,
-        # Example Groups file:
-        # S1	WT
-        # S2	WT
-        # S3	KO
-        # S4	KO
         # Building string for cntrl
         # sample to their group
         ctrl2grp = lambda w: "\n".join([
@@ -217,22 +210,27 @@ rule leafcutter_mkgroups:
                 str(s), str(w.case)
             ) for s in group2samples[w.case]
         ]),
+        mkgrp_script = join(workpath, "workflow", "scripts", "create_sample_sheet.py"),
+        groups_file  = grp_file,
     resources:
         mem   = allocated("mem",  "leafcutter_groupsfile", cluster),
         time  = allocated("time", "leafcutter_groupsfile", cluster),
     threads: int(allocated("threads", "leafcutter_groupsfile", cluster))
     container: config["images"]["leafcutter"]
-    shell:
-        # Dedent shell command due the
-        # use of EOF statements
-        textwrap.dedent("""
-        # Create groups file for a given comparison,
-        # First group becomes baseline in contrast
-        cat << EOF > {output.grp}
-        {params.ctrl2grp}
-        {params.case2grp}
-        EOF
-        """)
+    shell: """
+    # Create groups file for a given comparison:
+    # "{wildcards.case} vs. {wildcards.control}"
+    # First group becomes baseline in contrast,
+    # where:
+    # 1st column    = Sample
+    # 2nd column    = Group
+    # Nth column(s) = Covariates
+    {params.mkgrp_script} \\
+        --case-group {wildcards.case} \\
+        --control-group {wildcards.control} \\
+        --group-file {params.groups_file} \\
+    > {output.grp}
+    """
 
 
 rule leafcutter_diffsplicing:

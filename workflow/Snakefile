@@ -17,6 +17,7 @@ bindpath = config['bindpaths']                 # Singularity paths to bind to th
 samples  = config['samples']                   # Base name of input samples
 workpath = config['project']['workpath']       # Pipeline's output directory
 gtf_file = config['options']['gtf']            # File for annotating splice junctions
+grp_file = config['options'].get('groups','')  # Groups file
 
 # Differential splicing options
 # Dictionary mapping each group (key) 
