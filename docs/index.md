@@ -6,8 +6,8 @@
   <a href="https://doi.org/10.5281/zenodo.15170953">
       <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.15170953.svg" alt="DOI">
   </a>
-  <a href="https://github.com/OpenOmics/leafcutter/releases">
-    <img alt="GitHub release" src="https://img.shields.io/github/v/release/OpenOmics/leafcutter?color=blue&include_prereleases">
+  <a href="https://github.com/OpenOmics/leafworker/releases">
+    <img alt="GitHub release" src="https://img.shields.io/github/v/release/OpenOmics/leafworker?color=blue&include_prereleases">
   </a>
   <a href="https://hub.docker.com/repository/docker/skchronicles/leafcutter">
     <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/skchronicles/leafcutter">
