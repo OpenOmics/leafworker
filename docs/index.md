@@ -3,6 +3,15 @@
   <h1 style="font-size: 250%">leafworker 🔬</h1>
 
   <b><i>An awesome snakemake pipeline to run leafcutter</i></b><br> 
+  <a href="https://doi.org/10.5281/zenodo.15170953">
+      <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.15170953.svg" alt="DOI">
+  </a>
+  <a href="https://github.com/OpenOmics/leafcutter/releases">
+    <img alt="GitHub release" src="https://img.shields.io/github/v/release/OpenOmics/leafcutter?color=blue&include_prereleases">
+  </a>
+  <a href="https://hub.docker.com/repository/docker/skchronicles/leafcutter">
+    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/skchronicles/leafcutter">
+  </a><br>
   <a href="https://github.com/OpenOmics/leafworker/actions/workflows/main.yaml">
     <img alt="tests" src="https://github.com/OpenOmics/leafworker/workflows/tests/badge.svg">
   </a>
@@ -78,14 +87,26 @@ If you use this software, please cite it as below:
 === "BibTex"
 
     ```
-    Citation coming soon!
+    @software{Kuhn_OpenOmics_leafworker_2025,
+      author       = {Kuhn, Skyler},
+      title        = {OpenOmics/leafworker},
+      month        = apr,
+      year         = 2025,
+      publisher    = {Zenodo},
+      version      = {v0.1.0},
+      doi          = {10.5281/zenodo.15170953},
+      url          = {https://doi.org/10.5281/zenodo.15170953}
+    }
     ```
 
 === "APA"
 
     ```
-    Citation coming soon!
+    Kuhn, S. (2025). OpenOmics/leafworker: v0.1.0. Zenodo. https://doi.org/10.5281/zenodo.15170953
     ```
+
+For more citation style options, please visit the pipeline's [Zenodo page](https://doi.org/10.5281/zenodo.15170953).
+
 
 ## References
 
