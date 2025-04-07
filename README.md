@@ -45,8 +45,8 @@ git clone https://github.com/OpenOmics/leafworker.git
 # Change your working directory
 cd leafworker/
 # Add dependencies to $PATH
-# Biowulf users should run
-module load snakemake singularity
+# Skyline users should use
+module load snakemake/7.22.0-ufanewz
 # Get usage information
 ./leafworker -h
 ```
