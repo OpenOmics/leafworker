@@ -47,7 +47,8 @@ from src.utils import (
     fatal,
     permissions,
     check_cache,
-    require
+    require,
+    valid_directory
 )
 
 
@@ -293,7 +294,7 @@ def parsed_arguments(name, description):
                 [--dry-run] [--job-name JOB_NAME] [--mode {{slurm,local}}] \\
                 [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \\
                 [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \\
-                [--groups GROUPS] [--contrasts CONTRASTS] \\
+                [--batch-id BATCH_ID] [--groups GROUPS] [--contrasts CONTRASTS] \\
                 --input INPUT [INPUT ...] \\
                 --output OUTPUT \\
                 --gtf GTF
@@ -326,6 +327,30 @@ def parsed_arguments(name, description):
 
         {3}{4}Analysis options:{5}
         {6}@Differential splicing analysis{5}
+          --batch-id BATCH_ID
+                                Unique identifer to associate with a batch of samples.
+                                This option can be provided to ensure that differential
+                                splicing output files are not over-written between runs
+                                of the pipeline after updating the group file with
+                                additional covariates or dropping samples. By default,
+                                project-level files in "differential_splicing" could get
+                                over-written between pipeline runs if this option is not
+                                provided. The output directory name for a given contrast
+                                will resolve to "{{group1}}_vs_{{group2}}". As so, if 
+                                the groups file is updated to remove samples or add
+                                additional covariates without updating the group names,
+                                it could over write the previous analyses output files.
+                                Any identifer provided to this option will be used to
+                                create a sub directory in the "differential_splicing"
+                                folder. This ensures project-level files (which are
+                                unique) will not get over written. With that being said,
+                                it is always a good idea to provide this option. 
+                                A unique batch id should be provided between runs. This
+                                batch id should be composed of alphanumeric characters
+                                and it should not contain a white space or tab
+                                characters. Here is a list of valid or acceptable
+                                characters: "aA-Zz", "0-9", "-", "_".
+                                  Example: --batch-id "2024-04-01"
           --groups GROUPS
                                 Groups file. This tab delimited file is used to pair
                                 each sample to a group. Group information is used to
@@ -383,7 +408,7 @@ def parsed_arguments(name, description):
                                     G2	G1
                                     G4	G1
                                     G4	G3
-                                  Example: --contrasts .tests/contrasts.tsv 
+                                  Example: --contrasts .tests/contrasts.tsv
 
         {3}{4}Orchestration options:{5}
           --mode {{slurm,local}}  
@@ -532,6 +557,15 @@ def parsed_arguments(name, description):
     )
     
     # Analysis options
+    # Batch Identifer
+    subparser_run.add_argument(
+        '--batch-id',
+        type = lambda option: valid_directory(parser, option.replace(' ', '_')),
+        required = False,
+        default = '',
+        help = argparse.SUPPRESS
+    )
+
     # Groups TSV file to map
     # each sample to a group
     subparser_run.add_argument(

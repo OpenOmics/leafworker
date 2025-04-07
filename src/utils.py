@@ -4,8 +4,41 @@
 # Python standard library
 from __future__ import print_function
 from shutil import copytree
-import os, sys, hashlib
+import os, re, sys, hashlib
 import subprocess, json
+
+def valid_directory(parser, batch_id, *args, **kwargs):
+    """Checks if the value provided to '--batch-id' option is valid.
+    Check if the string consists of only alphanumeric characters, 
+    hypens, and underscores.
+    @param parser <argparse.ArgumentParser() object>:
+        Argparse parser object
+    @param batch_id <str>:
+        Value provided to '--batch-id' option
+    @return path <str>:
+        Returns batch_id if it is valid, else error is raised
+    """
+    # Check for default argparser value, if so return
+    # default --batch-id value is set to ''.
+    if batch_id == '':
+        # --batch-id is not provided, 
+        # return default value back
+        return batch_id
+
+    # Check if the batch id is a single hypen or underscore
+    # i.e --batch-id '-' or --batch-id '_' was given
+    if batch_id == '-' or batch_id == '_':
+        parser.error(
+            "Error: --batch-id '{}' is invalid! A batch identifer cannot be a single hypen or underscore.".format(batch_id)
+        )
+    # Check if the batch id is valid, enforce only alphanumeric 
+    # characters, hypens, and underscores
+    if not re.match(r'^[A-Za-z0-9\-_]+$', batch_id):
+        parser.error(
+            "Error: --batch-id '{}' is invalid! A batch identifer must consist of only alphanumeric characters, hypens, and underscores.".format(batch_id)
+        )
+
+    return batch_id
 
 
 def md5sum(filename, first_block_only = False, blocksize = 65536):

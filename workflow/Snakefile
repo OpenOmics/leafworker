@@ -18,6 +18,7 @@ samples  = config['samples']                   # Base name of input samples
 workpath = config['project']['workpath']       # Pipeline's output directory
 gtf_file = config['options']['gtf']            # File for annotating splice junctions
 grp_file = config['options'].get('groups','')  # Groups file
+batch_id = config['options']['batch_id']       # Batch Identifer, default: ''.
 
 # Differential splicing options
 # Dictionary mapping each group (key) 
@@ -68,14 +69,14 @@ rule all:
         # @imported from rules/leafcutter.smk
         # @output of rule leafcutter_mkgroups
         expand(
-            join(workpath, "differential_splicing", "{case}_vs_{control}", "groups_file.tsv"), 
+            join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "groups_file.tsv"), 
             zip, case=case_groups, control=ctrl_groups
         ),
         # Perform differential splicing analysis,
         # @imported from rules/leafcutter.smk
         # @output of rule leafcutter_diffsplicing
         expand(
-            join(workpath, "differential_splicing", "{case}_vs_{control}", "diff_splicing_cluster_significance.txt"), 
+            join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "diff_splicing_cluster_significance.txt"), 
             zip, case=case_groups, control=ctrl_groups
         ),
 

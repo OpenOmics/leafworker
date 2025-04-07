@@ -193,7 +193,7 @@ rule leafcutter_mkgroups:
     input:
         num = join(workpath, "junctions", "leafcutter_perind_numers.counts.gz"),
     output:
-        grp = join(workpath, "differential_splicing", "{case}_vs_{control}", "groups_file.tsv"),
+        grp = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "groups_file.tsv"),
     params:
         rname = "grpsfile",
         # Building string for cntrl
@@ -244,12 +244,12 @@ rule leafcutter_diffsplicing:
     """
     input:
         num = join(workpath, "junctions", "leafcutter_perind_numers.counts.gz"),
-        grp = join(workpath, "differential_splicing", "{case}_vs_{control}", "groups_file.tsv"),
+        grp = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "groups_file.tsv"),
     output:
-        res = join(workpath, "differential_splicing", "{case}_vs_{control}", "diff_splicing_cluster_significance.txt"),
+        res = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "diff_splicing_cluster_significance.txt"),
     params:
         rname  = "diffsplice",
-        prefix = join(workpath, "differential_splicing", "{case}_vs_{control}", "diff_splicing"),
+        prefix = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "diff_splicing"),
         # Resolve min samples per intron
         # to 3 for the analysis unless 
         # there is a group with 2 samples
