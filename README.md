@@ -20,7 +20,7 @@ The **`./leafworker`** pipeline is composed several inter-related sub commands t
  * [<code>leafworker <b>run</b></code>](https://openomics.github.io/leafworker/usage/run/): Run the leafworker pipeline with your input files.
  * [<code>leafworker <b>unlock</b></code>](https://openomics.github.io/leafworker/usage/unlock/): Unlocks a previous runs output directory.
  * [<code>leafworker <b>install</b></code>](https://openomics.github.io/leafworker/usage/install/): Download reference files locally.
- * [<code>leafworker <b>cache</b></code>](https://openomics.github.io/leafworker/usage/cache/): Cache remote resources locally, coming soon!
+ * [<code>leafworker <b>cache</b></code>](https://openomics.github.io/leafworker/usage/cache/): Cache software containers locally.
 
 **leafworker** is a pipeline to make running leafcutter easier, more reproducible, and more scalable. It relies on technologies like [Singularity<sup>1</sup>](https://singularity.lbl.gov/) to maintain the highest-level of reproducibility. The pipeline consists of a series of data processing and quality-control steps orchestrated by [Snakemake<sup>2</sup>](https://snakemake.readthedocs.io/en/stable/), a flexible and scalable workflow management system, to submit jobs to a cluster.
 
@@ -34,7 +34,7 @@ For more information about issues or trouble-shooting a problem, please checkout
 
 **Requires:** `singularity>=3.5`  `snakemake<=7.32.4`
 
-At the current moment, the pipeline uses a mixture of enviroment modules and docker images; however, this will be changing soon! In the very near future, the pipeline will only use docker images. With that being said, [snakemake](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html) and [singularity](https://singularity.lbl.gov/all-releases) must be installed on the target system. Snakemake orchestrates the execution of each step in the pipeline. To guarantee the highest level of reproducibility, each step of the pipeline will rely on versioned images from [DockerHub](https://hub.docker.com/orgs/nciccbr/repositories). Snakemake uses singularity to pull these images onto the local filesystem prior to job execution, and as so, snakemake and singularity will be the only two dependencies in the future.
+At the current moment, the pipeline only has two dependencies: snakemake and singularity. With that being said, [snakemake](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html) and [singularity](https://singularity.lbl.gov/all-releases) must be installed on the target system. Snakemake orchestrates the execution of each step in the pipeline. To guarantee the highest level of reproducibility, each step of the pipeline relies on versioned images from [DockerHub](https://hub.docker.com/repository/docker/skchronicles/leafcutter). Snakemake uses singularity to pull these images onto the local filesystem prior to job execution, and as so, snakemake and singularity will be the only two dependencies in the future.
 
 ## Installation
 
