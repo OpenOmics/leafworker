@@ -1,14 +1,15 @@
 # <code>leafworker <b>install</b></code>
 
-## 1. About
- 
-The `leafworker` executable is composed of several inter-related sub commands. Please see `leafworker -h` for all available options.
+???+ note
 
-This part of the documentation describes options and concepts for <code>leafworker <b>install</b></code> sub command in more detail.
+    This pipeline **does not** have any reference files that need to be downloaded
+    prior to running. As so, everything on this page can be safely ignored! We
+    have bundled all the reference files for the pipeline within our Github
+    repository. All the reference files are located within the [resources folder](https://github.com/OpenOmics/leafworker/tree/main/resources).
 
-This page is still under construction 👷, more information is coming soon!
 
-<!--
+## 1. About 
+
 The `leafworker` executable is composed of several inter-related sub commands. Please see `leafworker -h` for all available options.
 
 This part of the documentation describes options and concepts for <code>leafworker <b>install</b></code> sub command in more detail.
@@ -19,11 +20,12 @@ The pipeline uses a set of reference files to process the data. These reference 
 
 Since most resource bundles are very large; we recommend using multiple threads for pulling reference files concurrently. The resource bundle can be very large so please ensure you have sufficent disk space prior to running this sub command.
 
-**Please Note:** The resource bundle requires about X GB of available disk space. If you are running the pipeline on the Biowulf cluster, you do *NOT* need to download the pipeline's resource bundle. It is already accessible to all HPC users. This sub command is for users running the pipeline outside of the Biowulf cluster.
+**Please Note:** The resource bundle requires about 2 GB of available disk space. If you are running the pipeline on the Biowulf cluster, you do *NOT* need to download the pipeline's resource bundle. It is already accessible to all HPC users. This sub command is for users running the pipeline outside of the Biowulf cluster.
 
 Downloading the resource bundle is fast and easy! In its most basic form, <code>leafworker <b>install</b></code> only has *one required input*.
 
 ## 2. Synopsis
+
 ```text
 $ leafworker install [--help] [--dry-run] \
      [--force] [--threads] \
@@ -114,5 +116,9 @@ leafworker install --ref-path /data/$USER/refs \
 # Checkout the downloaded files
 cd /data/$USER/refs
 tree leafworker
+# leafworker/
+# ├── kronatax_1222
+# │   └── taxonomy.tab
+# └── NCBI
+#     └── viral_genomes_taxid.fa
 ```
--->
