@@ -4,7 +4,7 @@
   
   **_An awesome snakemake pipeline to run leafcutter_**
 
-  [![tests](https://github.com/OpenOmics/leafworker/workflows/tests/badge.svg)](https://github.com/OpenOmics/leafworker/actions/workflows/main.yaml) [![docs](https://github.com/OpenOmics/leafworker/workflows/docs/badge.svg)](https://github.com/OpenOmics/leafworker/actions/workflows/docs.yml) [![GitHub issues](https://img.shields.io/github/issues/OpenOmics/leafworker?color=brightgreen)](https://github.com/OpenOmics/leafworker/issues)  [![GitHub license](https://img.shields.io/github/license/OpenOmics/leafworker)](https://github.com/OpenOmics/leafworker/blob/main/LICENSE) 
+  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15170953.svg)](https://doi.org/10.5281/zenodo.15170953) [![GitHub release (latest SemVer including pre-releases)](https://img.shields.io/github/v/release/OpenOmics/leafcutter?color=blue&include_prereleases)](https://github.com/OpenOmics/leafcutter/releases) [![Docker Pulls](https://img.shields.io/docker/pulls/skchronicles/leafcutter)](https://hub.docker.com/repository/docker/skchronicles/leafcutter) <br> [![tests](https://github.com/OpenOmics/leafworker/workflows/tests/badge.svg)](https://github.com/OpenOmics/leafworker/actions/workflows/main.yaml) [![docs](https://github.com/OpenOmics/leafworker/workflows/docs/badge.svg)](https://github.com/OpenOmics/leafworker/actions/workflows/docs.yml) [![GitHub issues](https://img.shields.io/github/issues/OpenOmics/leafworker?color=brightgreen)](https://github.com/OpenOmics/leafworker/issues)  [![GitHub license](https://img.shields.io/github/license/OpenOmics/leafworker)](https://github.com/OpenOmics/leafworker/blob/main/LICENSE) 
   
   <i>
     This is the home of the pipeline, leafworker. Its long-term goals: to make running leafcutter easier, more reproducible, and more scalable.
@@ -63,7 +63,16 @@ If you use this software, please cite it as below:
   <summary><b><i>@BibText</i></b></summary>
  
 ```text
-Citation coming soon!
+@software{Kuhn_OpenOmics_leafworker_2025,
+  author       = {Kuhn, Skyler},
+  title        = {OpenOmics/leafworker},
+  month        = apr,
+  year         = 2025,
+  publisher    = {Zenodo},
+  version      = {v0.1.0},
+  doi          = {10.5281/zenodo.15170953},
+  url          = {https://doi.org/10.5281/zenodo.15170953}
+}
 ```
 
 </details>
@@ -72,10 +81,12 @@ Citation coming soon!
   <summary><b><i>@APA</i></b></summary>
 
 ```text
-Citation coming soon!
+Kuhn, S. (2025). OpenOmics/leafworker: v0.1.0. Zenodo. https://doi.org/10.5281/zenodo.15170953
 ```
 
 </details>
+
+For more citation style options, please visit the pipeline's [Zenodo page](https://doi.org/10.5281/zenodo.15170953).
 
 
 ## References
