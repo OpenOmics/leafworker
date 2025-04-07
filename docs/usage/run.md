@@ -63,10 +63,10 @@ Each of the following arguments are optional, and do not need to be provided.
 
   `--batch-id BATCH_ID`
 > **Unique identifer to associate with a batch of samples.**   
-> *type: string*
+> *type: string*  
 > *default: None*   
 >
-> This option can be provided to ensure that differential splicing output files are not over-written between runs of the pipeline after updating the group file with additional covariates or dropping samples. By default, project-level files in "differential_splicing" could get over-written between pipeline runs if this option is not provided. The output directory name for a given contrast will resolve to `{group1}_vs_{group2}`. As so, if the groups file is updated to remove samples or add additional covariates without updating the group names, it could over write the previous analyses output files. Any identifer provided to this option will be used to create a sub directory in the "differential_splicing" folder. This ensures project-level files (which are unique) will not get over written. With that being said, it is always a good idea to provide this option. A unique batch id should be provided between runs. This batch id should be composed of alphanumeric characters and it should not contain a white space or tab characters. Here is a list of valid or acceptable characters: `aA-Zz`, `0-9`, `-`, `_`.
+> This option can be provided to ensure that differential splicing output files are not over-written between runs of the pipeline after updating the group file with additional covariates or dropping samples. By default, project-level files in "differential_splicing" could get over-written between pipeline runs if this option is not provided. The output directory name for a given contrast will resolve to `{group1}_vs_{group2}` within the **differential_splicing** folder. As so, if the groups file is updated to remove samples or add additional covariates without updating the group names, it could over write the previous analyses output files. Any identifer provided to this option will be used to create a sub directory in the "differential_splicing" folder. This ensures project-level files (which are unique) will not get over written. With that being said, it is always a good idea to provide this option. A unique batch id should be provided between runs. This batch id should be composed of alphanumeric characters and it should not contain a white space or tab characters. Here is a list of valid or acceptable characters: `aA-Zz`, `0-9`, `-`, `_`.
 > 
 > ***Example:*** `--batch-id 2025_04_08`
 
@@ -136,7 +136,7 @@ Each of the following arguments are optional, and do not need to be provided.
 ---  
   `--mode {slurm,local}`  
 > **Execution Method.**  
-> *type: string*  
+> *type: string*   
 > *default: slurm*
 > 
 > Execution Method. Defines the mode or method of execution. Vaild mode options include: slurm or local. 
@@ -152,7 +152,7 @@ Each of the following arguments are optional, and do not need to be provided.
 ---  
   `--job-name JOB_NAME`  
 > **Set the name of the pipeline's master job.**  
-> *type: string*
+> *type: string*  
 > *default: pl:leafworker*
 > 
 > When submitting the pipeline to a job scheduler, like SLURM, this option always you to set the name of the pipeline's master job. By default, the name of the pipeline's master job is set to "pl:leafworker".
