@@ -457,11 +457,12 @@ def parsed_arguments(name, description):
                                 known as the pipeline's working directory. If the user
                                 provided working directory has not been initialized,
                                 it will be created automatically.
-                                  Example: --output /data/$USER/output
+                                  Example: --output leafworker_output
           --gtf GTF             
                                 Annotation file in GTF format. This annotation file is
                                 used by leafcutter to identify splice junctions within
-                                the transcriptome. 
+                                the transcriptome.
+                                  Example: --gtf .tests/gencode.v19.annotation.gtf.gz
 
         {3}{4}Analysis options:{5}
         {6}@Differential splicing analysis{5}
@@ -627,11 +628,12 @@ def parsed_arguments(name, description):
           # do not run on head node!
           srun -N 1 -n 1 --time=1:00:00 --mem=8gb  --cpus-per-task=2 --pty bash
           module purge
-          module load singularity snakemake
+          module load snakemake/7.22.0-ufanewz
 
           # Step 2A.) Dry-run the pipeline
           ./{0} run --input .tests/*.bam \\
                          --output leafworker_output \\
+                         --gtf .tests/gencode.v19.annotation.gtf.gz \\
                          --mode slurm \\
                          --dry-run
 
@@ -641,6 +643,7 @@ def parsed_arguments(name, description):
           # the pipeline in this mode.
           ./{0} run --input .tests/*.bam \\
                          --output leafworker_output \\
+                         --gtf .tests/gencode.v19.annotation.gtf.gz \\
                          --mode slurm
 
         {2}{3}Version:{4}
