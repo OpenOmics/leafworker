@@ -62,10 +62,11 @@ Each of the following arguments are optional and do not need to be provided.
 # Step 0.) Grab an interactive node (do not run on head node)
 srun -N 1 -n 1 --time=12:00:00 -p interactive --mem=8gb  --cpus-per-task=4 --pty bash
 module purge
-module load singularity snakemake
+module load snakemake/7.22.0-ufanewz
 
 # Step 1.) Dry run to see what will be pulled
-./leafworker cache --sif-cache /data/$USER/cache \
+./leafworker cache \
+               --sif-cache /data/$USER/cache \
                --dry-run  
 
 # Step 2.) Cache remote resources locally.

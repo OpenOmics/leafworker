@@ -95,7 +95,7 @@ Each of the following arguments are optional and do not need to be provided.
 # do not run on head node! 
 srun -N 1 -n 1 --time=12:00:00 -p interactive --mem=24gb  --cpus-per-task=12 --pty bash
 module purge
-module load singularity snakemake
+module load snakemake/7.22.0-ufanewz
 
 # Step 1.) Dry-run download of the resource bundle
   leafworker install --ref-path /data/$USER/refs \
