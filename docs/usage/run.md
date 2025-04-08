@@ -95,9 +95,9 @@ Each of the following arguments are optional, and do not need to be provided.
 > ```
 > 
 > **where:**   
-> `Sample` is the base name of each sample's input BAM file without _.bam_  file extension.  
-> `Group` represents each sample's group name(s).  
-> Any additional columns are optional covariates. Only the `Sample` and `Group` columns are required. 
+> • `Sample` is the base name of each sample's input BAM file without _.bam_  file extension.  
+> • `Group` represents each sample's group name(s).  
+> • Any additional columns are optional covariates. Only the `Sample` and `Group` columns are required. 
 >
 > ***Example:*** `--groups .tests/groups.tsv`
 
@@ -115,8 +115,8 @@ Each of the following arguments are optional, and do not need to be provided.
 > ```
 > 
 > **where:**  
-> Any groups listed in this file must exist in the `--groups` file.  
-> 2nd column represents the comaprison baseline, i.e _G1_ and _G3_ in the example above.  
+> • Any groups listed in this file must exist in the `--groups` file.  
+> • 2nd column represents the baseline of the comparison, i.e _G1_ and _G3_ in the example above.  
 >  
 > ***Example:*** `--contrasts .tests/contrasts.tsv`
 
