@@ -58,19 +58,20 @@ def check_file(file, ncols, delim='\t'):
         for line in fh:
             linenumber += 1
             linelist = [l.strip() for l in line.split(delim) if l.strip()]
-            if len(linelist) <= ncols or len(linelist) == 0:
+            if len(linelist) == 0:
                 # Skip over lines with the expected
                 # number of columns and empty line
                 continue
-            # Line is missing a column or it is not
-            # tab delimited
-            errors = True
-            err(
-                '{}{}Error: --groups "{}" file does not contain the expected number of columns at line {}! {}'.format(
-                   c.bg_red, c.white, file, linenumber, c.end
+            if len(linelist) <= ncols:
+                # Line is missing a column or it is not
+                # tab delimited
+                errors = True
+                err(
+                    '{}{}Error: --groups "{}" file does not contain the expected number of columns at line {}! {}'.format(
+                       c.bg_red, c.white, file, linenumber, c.end
+                    )
                 )
-            )
-            err('{}{}  └── Bad line contents: "{}" {}'.format(c.bg_red, c.white, line.rstrip(), c.end))
+                err('{}{}  └── Bad line contents: "{}" {}'.format(c.bg_red, c.white, line.rstrip(), c.end))
     if errors:
         fatal(
             '{}{}Fatal: Please correct these lines and check your file is tab-delimited! {}'.format(
