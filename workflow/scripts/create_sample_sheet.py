@@ -121,12 +121,16 @@ def parse_groups(input_file, search_group, skip_header=True, delim='\t'):
             multiple_groups = [clean(g.strip()) for g in multiple_groups]
             if search_group in multiple_groups:
                 # Got a hit print formatted line
-                # with sample, group, and N covariates
+                # with sample, group, and N covariates,
+                # Make sure any white spaces are removed.
+                covariates = "\t".join([cv.replace(" ", "") for cv in linelist[2:]])
+                if covariates:
+                    covariates = "\t{0}".format(covariates)
                 print(
-                    "{}\t{}\t{}".format(
-                        linelist[0],             # sample column
-                        search_group,            # group column
-                        "\t".join(linelist[2:])  # N remaining columns (covariates)
+                    "{0}\t{1}{2}".format(
+                        linelist[0],                    # sample column
+                        search_group.replace(" ", ""),  # group column
+                        covariates                      # N remaining columns (covariates)
                     )
                 )
 
