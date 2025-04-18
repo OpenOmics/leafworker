@@ -3,5 +3,9 @@
         "threads": "4",
         "mem": "16g",
         "time": "0-18:00:00"
+    },
+    "leafcutter_diffsplicing": {
+        "threads": "8",
+        "mem": "32g"
     }
 }
