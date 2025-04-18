@@ -62,7 +62,7 @@ def check_file(file, ncols, delim='\t'):
                 # Skip over lines with the expected
                 # number of columns and empty line
                 continue
-            if len(linelist) <= ncols:
+            if len(linelist) < ncols:
                 # Line is missing a column or it is not
                 # tab delimited
                 errors = True
