@@ -8,6 +8,86 @@ from scripts.common import (
 
 
 # Data processing leafcutter rules
+rule leafcutter_gtf2exons:
+    """
+    Data-processing step to create a reference file for leafcutter's 
+    differential splicing script. This file is a tab-delimited file
+    containing information about exons. The exons file should have
+    the following columns: chr, start, end, strand, gene_name. It is
+    used by leafcutter to annotate clusters to genes.
+    @Input:
+        Input GTF file (singleton)
+    @Output:
+        Exons TSV file
+    """
+    input:
+        gtf   = gtf_file
+    output:
+        exons = join(workpath, "temp", "exons.tsv.gz"),
+    params:
+        rname = "gtf2exons",
+    resources:
+        mem   = allocated("mem",  "leafcutter_gtf2exons", cluster),
+        time  = allocated("time", "leafcutter_gtf2exons", cluster),
+    threads: int(allocated("threads", "leafcutter_gtf2exons", cluster))
+    container: config["images"]["leafcutter"]
+    shell: """
+    # Get information for each exon, i.e
+    # chr, start, end, strand, gene_name
+    gtf_to_exons.R \\
+        {input.gtf} \\
+        {output.exons}
+    """
+
+
+rule leafcutter_gtf2leafviz:
+    """
+    Data-processing step to create a reference file for leafcutter's 
+    script to visualize the differential splicing results. The shiny
+    app includes functionality to label detected introns as annotated
+    or cryptic. This step processes a given GTF to generate lists of
+    exons, introns and splice sites.
+    @Input:
+        Input GTF file (singleton)
+    @Output:
+        All introns TSV file,
+        All exons TSV file,
+        5-prime introns TSV file,
+        3-prime introns TSV file
+    """
+    input:
+        gtf   = gtf_file
+    output:
+        introns = join(workpath, "temp", "annotation_all_introns.bed.gz"),
+        exons   = join(workpath, "temp", "annotation_all_exons.txt.gz"),
+        start   = join(workpath, "temp", "annotation_fiveprime.bed.gz"),
+        end     = join(workpath, "temp", "annotation_threeprime.bed.gz"),
+    params:
+        rname  = "gtf2leafviz",
+        prefix = join(workpath, "temp", "annotation"),
+        tmpdir = join(workpath, "temp"),
+    resources:
+        mem   = allocated("mem",  "leafcutter_gtf2leafviz", cluster),
+        time  = allocated("time", "leafcutter_gtf2leafviz", cluster),
+    threads: int(allocated("threads", "leafcutter_gtf2leafviz", cluster))
+    container: config["images"]["leafcutter"]
+    shell: """
+    # Setups temporary directory for
+    # intermediate files with built-in 
+    # mechanism for deletion on exit
+    tmp=$(mktemp -d -p "{params.tmpdir}")
+    trap 'rm -rf "${{tmp}}"' EXIT
+    export TMPDIR="${{tmp}}"
+
+    # Get detailed information about
+    # exons, introns, and their start
+    # and end junction positions
+    gtf2leafcutter.pl \\
+        -o {params.prefix} \\
+        {input.gtf}
+    """
+
+
 rule leafcutter_bam2bed:
     """
     Data-processing step to keep any aligned spliced RNA reads from the input BAM
@@ -243,10 +323,12 @@ rule leafcutter_diffsplicing:
         Differential splicing results
     """
     input:
+        exn = join(workpath, "temp", "exons.tsv.gz"),
         num = join(workpath, "junctions", "leafcutter_perind_numers.counts.gz"),
         grp = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "groups_file.tsv"),
     output:
         res = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "diff_splicing_cluster_significance.txt"),
+        eff = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "diff_splicing_effect_sizes.txt"),
     params:
         rname  = "diffsplice",
         prefix = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "diff_splicing"),
@@ -266,6 +348,7 @@ rule leafcutter_diffsplicing:
     # Run differential splicing analysis for:
     #   {wildcards.case} vs. {wildcards.control}
     leafcutter_ds.R \\
+        --exon_file {input.exn} \\
         --num_threads {threads} \\
         --min_samples_per_intron {params.min_samples} \\
         --timeout 1200 \\
@@ -273,4 +356,51 @@ rule leafcutter_diffsplicing:
         --output_prefix {params.prefix} \\
         {input.num} \\
         {input.grp}
+    """
+
+
+rule leafcutter_prepleafviz:
+    """
+    Data-processing step to create the Rdata file for running leafcutter's
+    shiny application, i.e leafviz. This shiny application can be used to
+    interactively explore the differential splicing results. This step will
+    generate a single .RData file with everything the shiny app needs to run.
+    @Input:
+        Counts file provided to leafcutter_ds.R,
+        Groups file provided to leafcutter_ds.R,
+        Cluster significant table output by leafcutter_ds.R,
+        Per-junction effect sizes table output by leafcutter_ds.R,
+        All introns TSV file,
+
+    @Output:
+        Rdata file to input to leafviz shiny app
+    """
+    input:
+        num = join(workpath, "junctions", "leafcutter_perind_numers.counts.gz"),
+        grp = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "groups_file.tsv"),
+        res = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "diff_splicing_cluster_significance.txt"),
+        eff = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "diff_splicing_effect_sizes.txt"),
+        itn = join(workpath, "temp", "annotation_all_introns.bed.gz"),
+    output:
+        rda = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "{case}_vs_{control}_leafviz.Rdata"),
+    params:
+        rname  = "prleafviz",
+        prefix = join(workpath, "temp", "annotation"),
+    resources:
+        mem   = allocated("mem",  "leafcutter_prepleafviz", cluster),
+        time  = allocated("time", "leafcutter_prepleafviz", cluster),
+    threads: int(allocated("threads", "leafcutter_prepleafviz", cluster))
+    container: config["images"]["leafcutter"]
+    shell: """
+    # Create input leafviz Rdata file for:
+    # "{wildcards.case} vs. {wildcards.control}"
+    prepare_results.R \\
+        --fdr 0.1 \\
+        --meta_data_file {input.grp} \\
+        --code "{wildcards.case}_vs_{wildcards.control}" \\
+        {input.num} \\
+        {input.res} \\
+        {input.eff} \\
+        {params.prefix} \\
+        -o {output.rda}
     """

@@ -72,11 +72,24 @@ rule all:
             join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "groups_file.tsv"), 
             zip, case=case_groups, control=ctrl_groups
         ),
+        # Create exons reference file for
+        # differential splicing analysis,
+        # @imported from rules/leafcutter.smk
+        # @output of rule leafcutter_gtf2exons
+        join(workpath, "temp", "exons.tsv.gz"),
         # Perform differential splicing analysis,
         # @imported from rules/leafcutter.smk
         # @output of rule leafcutter_diffsplicing
         expand(
             join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "diff_splicing_cluster_significance.txt"), 
+            zip, case=case_groups, control=ctrl_groups
+        ),
+        # Create input for shiny application
+        # using differential splicing results,
+        # @imported from rules/leafcutter.smk
+        # @output of rule leafcutter_prepleafviz
+        expand(
+            join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "{case}_vs_{control}_leafviz.Rdata"), 
             zip, case=case_groups, control=ctrl_groups
         ),
 
