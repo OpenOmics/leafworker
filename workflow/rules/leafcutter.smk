@@ -395,7 +395,7 @@ rule leafcutter_prepleafviz:
     # Create input leafviz Rdata file for:
     # "{wildcards.case} vs. {wildcards.control}"
     prepare_results.R \\
-        --fdr 0.1 \\
+        --FDR 0.1 \\
         --meta_data_file {input.grp} \\
         --code "{wildcards.case}_vs_{wildcards.control}" \\
         {input.num} \\
