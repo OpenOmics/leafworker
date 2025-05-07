@@ -1,5 +1,6 @@
 {
     "images": {
-        "leafcutter": "docker://skchronicles/leafcutter:v0.1.0"
+        "leafcutter": "docker://skchronicles/leafcutter:v0.1.0",
+        "isoformswitchanalyzer": "docker://skchronicles/isoformswitchanalyzer:v0.1.0"
     }
 }
