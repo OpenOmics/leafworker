@@ -25,8 +25,8 @@ rule isoformswitchanalyzer_bam2fastq:
     input:
         bam   = join(workpath, "{name}.bam"),
     output:
-        r1 = join(workpath, "fastqs", "{name}.R1.fastq.gz"),
-        r2 = join(workpath, "fastqs", "{name}.R2.fastq.gz"),
+        r1 = temp(join(workpath, "fastqs", "{name}.R1.fastq.gz")),
+        r2 = temp(join(workpath, "fastqs", "{name}.R2.fastq.gz")),
     params:
         rname = "bam2fqs",
     resources:
