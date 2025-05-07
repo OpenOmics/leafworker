@@ -46,3 +46,83 @@ rule isoformswitchanalyzer_bam2fastq:
         -s /dev/null \\
         -n
     """
+
+
+rule isoformswitchanalyzer_salmon_index:
+    """
+    Reference building step to create a index of the
+    transcriptome for salmon. Salmon requires a pre-built 
+    index of the transcriptome to perform quantification.
+    @Input:
+        Transcriptomic FASTA file (singleton)
+    @Output:
+        Salmon Index
+    """
+    input:
+        transcripts = quantify_transcripts,
+    output:
+        index = join(workpath, "temp", "salmon_index", "seq.bin"),
+    params:
+        rname  = "salmonidx",
+        prefix = join(workpath, "temp", "salmon_index"),
+    resources:
+        mem   = allocated("mem",  "isoformswitchanalyzer_salmon_index", cluster),
+        time  = allocated("time", "isoformswitchanalyzer_salmon_index", cluster),
+    threads: int(allocated("threads", "isoformswitchanalyzer_salmon_index", cluster))
+    container: config["images"]["isoformswitchanalyzer"]
+    shell: """
+    # Build an index for running salmon
+    salmon index \\
+        --threads {threads} \\
+        -t {input.transcripts} \\
+        -i {params.prefix} \\
+        -k 31 \\
+        --gencode
+    """
+
+
+rule isoformswitchanalyzer_salmon_quant:
+    """
+    Data-processing step to get counts using Salmon. Salmon
+    is an extremely fast and bias-aware method for transcript
+    quantification. It performs a quasi-mapping of reads to the
+    transcriptome and uses a lightweight model to estimate 
+    transcript abundance. Salmon has better bias correction
+    models than other tools like Kallisto and it is also
+    more accurate than Kallisto.
+    @Input:
+        Paired-end FastQ files (scatter-per-sample)
+    @Output:
+        Per-sample transcript abundance estimates
+    """
+    input:
+        r1 = join(workpath, "fastqs", "{name}.R1.fastq.gz"),
+        r2 = join(workpath, "fastqs", "{name}.R2.fastq.gz"),
+        index = join(workpath, "temp", "salmon_index", "seq.bin"),
+    output:
+        salmon = join(workpath, "isoformswitchanalyzer", "{name}", "quant.sf"),
+    params:
+        rname  = "salmonquant",
+        outdir = join(workpath, "isoformswitchanalyzer", "{name}"),
+        prefix = join(workpath, "temp", "salmon_index"),
+    resources:
+        mem   = allocated("mem",  "isoformswitchanalyzer_salmon_quant", cluster),
+        time  = allocated("time", "isoformswitchanalyzer_salmon_quant", cluster),
+    threads: int(allocated("threads", "isoformswitchanalyzer_salmon_quant", cluster))
+    container: config["images"]["isoformswitchanalyzer"]
+    shell: """
+    # Quantifies transcript abundance using Salmon
+    salmon quant \\
+        --threads {threads} \\
+        -i {params.prefix} \\
+        -l A \\
+        -1 {input.r1} \\
+        -2 {input.r2} \\
+        -o {params.outdir} \\
+        --validateMappings \\
+        --threads {threads} \\
+        --seqBias \\
+        --gcBias \\
+        --posBias
+    """
+
