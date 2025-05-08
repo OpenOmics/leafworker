@@ -6,6 +6,7 @@ FROM ubuntu:24.04
 # • https://www.bioconductor.org/packages/release/bioc/vignettes/IsoformSwitchAnalyzeR/inst/doc/IsoformSwitchAnalyzeR.html
 # @TLDR:
 #    • samtools       apt-get, installs: 1.19.2
+#    • salmon         github,  installs: 1.10.1
 #    • python3        apt-get, installs: 3.12.3
 #    • python3-pip    apt-get, installs: 24.0
 #    • r-bioc-isoformswitchanalyzer apt-get, installs: 2.2.0
@@ -33,7 +34,6 @@ RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y \
         build-essential \
         bzip2 \
-        ca-certificates \
         cmake \
         curl \
         gawk \
@@ -76,11 +76,17 @@ RUN mkdir -p /opt2/ \
         && make \
         && make install
 
+# Install salmon from the latest pre-compiled
+# binaries on github, i.e 1.10.0
+RUN cd /opt2 \
+    && wget --no-check-certificate -O /opt2/salmon.tar.gz https://github.com/COMBINE-lab/salmon/releases/download/v1.10.0/salmon-1.10.0_linux_x86_64.tar.gz \
+    && tar -xvf /opt2/salmon.tar.gz -C /opt2/ \
+    && rm /opt2/salmon.tar.gz
 
 ################ POST #################
 # Add Dockerfile and export important 
 # environment variables
 ADD Dockerfile /opt2/isoformswitchanalyzer_v0-1-0.dockerfile
 RUN chmod -R a+rX /opt2
-ENV PATH="/opt2/which-2.21/bin:${PATH}"
+ENV PATH="/opt2/which-2.21/bin:/opt2/salmon-latest_linux_x86_64/bin:${PATH}"
 WORKDIR /data2
