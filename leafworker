@@ -432,7 +432,8 @@ def parsed_arguments(name, description):
                 [--dry-run] [--job-name JOB_NAME] [--mode {{slurm,local}}] \\
                 [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \\
                 [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \\
-                [--batch-id BATCH_ID] [--groups GROUPS] [--contrasts CONTRASTS] \\
+                [--batch-id BATCH_ID] [--quantify-transcripts QUANTIFY_TRANSCRIPTS] \\
+                [--groups GROUPS] [--contrasts CONTRASTS] \\
                 --input INPUT [INPUT ...] \\
                 --output OUTPUT \\
                 --gtf GTF
@@ -490,6 +491,22 @@ def parsed_arguments(name, description):
                                 characters. Here is a list of valid or acceptable
                                 characters: "aA-Zz", "0-9", "-", "_".
                                   Example: --batch-id "2024-04-01"
+          --quantify-transcripts QUANTIFY_TRANSCRIPTS
+                                FASTA file of transcripts to quantify. If this file
+                                is provided, an extra set of steps will run to estimate
+                                transcript expression using Salmon. If this option is
+                                also provided with a groups and contrasts file, an
+                                additional step will run identify isoform switches
+                                using IsoformSwitchAnalyzeR.
+                                A transcriptomic FASTA file matching the provided
+                                annotation can be downloaded from GENCODE or generated
+                                using gffread from the cufflinks suite via:
+                                  $ gffread -w transcripts.fa -g genome.fa anno.gtf
+                                To generate your own transcript.fa file using the cmd
+                                above, please provide the genomic FASTA file that was
+                                used to create the input BAM files and the annotation
+                                provided to the pipeline's gtf option.
+                                  Example: --quantify-transcripts transcripts.fa
           --groups GROUPS
                                 Groups file. This tab delimited file is used to pair
                                 each sample to a group. Group information is used to
@@ -704,6 +721,16 @@ def parsed_arguments(name, description):
         type = lambda option: valid_directory(parser, option.replace(' ', '_')),
         required = False,
         default = '',
+        help = argparse.SUPPRESS
+    )
+
+    # Transcripts FASTA file
+    subparser_run.add_argument(
+        '--quantify-transcripts',
+        # Check if the file exists and if it is readable
+        type = lambda file: permissions(parser, file, os.R_OK),
+        required = False,
+        default = None,
         help = argparse.SUPPRESS
     )
 

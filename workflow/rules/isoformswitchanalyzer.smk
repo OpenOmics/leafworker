@@ -100,10 +100,10 @@ rule isoformswitchanalyzer_salmon_quant:
         r2 = join(workpath, "fastqs", "{name}.R2.fastq.gz"),
         index = join(workpath, "temp", "salmon_index", "seq.bin"),
     output:
-        salmon = join(workpath, "isoformswitchanalyzer", "{name}", "quant.sf"),
+        salmon = join(workpath, "counts", "transcripts", "{name}", "quant.sf"),
     params:
         rname  = "salmonquant",
-        outdir = join(workpath, "isoformswitchanalyzer", "{name}"),
+        outdir = join(workpath, "counts", "transcripts", "{name}"),
         prefix = join(workpath, "temp", "salmon_index"),
     resources:
         mem   = allocated("mem",  "isoformswitchanalyzer_salmon_quant", cluster),

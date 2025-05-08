@@ -20,6 +20,9 @@ gtf_file = config['options']['gtf']            # File for annotating splice junc
 grp_file = config['options'].get('groups','')  # Groups file
 batch_id = config['options']['batch_id']       # Batch Identifer, default: ''.
 
+# Quanity transcript abundances
+quantify_transcripts = config['options'].get('quantify_transcripts')
+
 # Differential splicing options
 # Dictionary mapping each group (key) 
 # to a list of samples (value)
@@ -92,9 +95,38 @@ rule all:
             join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "{case}_vs_{control}_leafviz.Rdata"), 
             zip, case=case_groups, control=ctrl_groups
         ),
+        # Convert BAM files to FastQ files,
+        # conditionally runs if the quantify
+        # transcripts option is provided. 
+        # @imported from rules/isoformswitchanalyzer.smk
+        # @output of rule isoformswitchanalyzer_bam2fastq
+        expand(
+            join(workpath, "fastqs", "{name}.R1.fastq.gz"),
+            name=provided(samples, quantify_transcripts != "None")
+        ),
+        expand(
+            join(workpath, "fastqs", "{name}.R2.fastq.gz"),
+            name=provided(samples, quantify_transcripts != "None")
+        ),
+        # Create salmon index,
+        # conditionally runs if the quantify
+        # transcripts option is provided. 
+        # @imported from rules/isoformswitchanalyzer.smk
+        # @output of rule isoformswitchanalyzer_salmon_index
+        provided([join(workpath, "temp", "salmon_index", "seq.bin")], quantify_transcripts != "None"),
+        # Run salmon quant to get transcript counts,
+        # conditionally runs if the quantify
+        # transcripts option is provided. 
+        # @imported from rules/isoformswitchanalyzer.smk
+        # @output of rule isoformswitchanalyzer_salmon_quant
+        expand(
+            join(workpath, "counts", "transcripts", "{name}", "quant.sf"),
+            name=provided(samples, quantify_transcripts != "None")
+        ),
 
 
 # Import rules 
 include: join("rules", "leafcutter.smk")
+include: join("rules", "isoformswitchanalyzer.smk")
 include: join("rules", "common.smk")
 include: join("rules", "hooks.smk")
