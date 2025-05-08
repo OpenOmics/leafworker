@@ -121,6 +121,7 @@ rule isoformswitchanalyzer_salmon_quant:
         rname  = "salmonquant",
         outdir = join(workpath, "counts", "transcripts", "{name}"),
         prefix = join(workpath, "temp", "salmon_index"),
+        tmpdir = join(workpath, "temp"),
     resources:
         mem   = allocated("mem",  "isoformswitchanalyzer_salmon_quant", cluster),
         time  = allocated("time", "isoformswitchanalyzer_salmon_quant", cluster),
