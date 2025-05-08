@@ -144,7 +144,6 @@ rule isoformswitchanalyzer_salmon_quant:
         -2 {input.r2} \\
         -o {params.outdir} \\
         --validateMappings \\
-        --threads {threads} \\
         --seqBias \\
         --gcBias \\
         --posBias
