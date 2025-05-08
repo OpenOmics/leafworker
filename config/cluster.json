@@ -7,5 +7,17 @@
     "leafcutter_diffsplicing": {
         "threads": "8",
         "mem": "32g"
+    },
+    "isoformswitchanalyzer_bam2fastq": {
+        "threads": "4",
+        "mem": "32g"
+    },
+    "isoformswitchanalyzer_salmon_index": {
+        "threads": "4",
+        "mem": "32g"
+    },
+    "isoformswitchanalyzer_salmon_quant": {
+        "threads": "4",
+        "mem": "32g"
     }
 }

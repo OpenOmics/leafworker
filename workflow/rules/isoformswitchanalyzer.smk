@@ -28,13 +28,21 @@ rule isoformswitchanalyzer_bam2fastq:
         r1 = temp(join(workpath, "fastqs", "{name}.R1.fastq.gz")),
         r2 = temp(join(workpath, "fastqs", "{name}.R2.fastq.gz")),
     params:
-        rname = "bam2fqs",
+        rname  = "bam2fqs",
+        tmpdir = join(workpath, "temp"),
     resources:
         mem   = allocated("mem",  "isoformswitchanalyzer_bam2fastq", cluster),
         time  = allocated("time", "isoformswitchanalyzer_bam2fastq", cluster),
     threads: int(allocated("threads", "isoformswitchanalyzer_bam2fastq", cluster))
     container: config["images"]["isoformswitchanalyzer"]
     shell: """
+    # Setups temporary directory for
+    # intermediate files with built-in 
+    # mechanism for deletion on exit
+    tmp=$(mktemp -d -p "{params.tmpdir}")
+    trap 'rm -rf "${{tmp}}"' EXIT
+    export TMPDIR="${{tmp}}"
+
     # Creates paired-end FastQ files while 
     # discarding singletons, supplementary, 
     # and secondary reads using samtools
@@ -65,12 +73,20 @@ rule isoformswitchanalyzer_salmon_index:
     params:
         rname  = "salmonidx",
         prefix = join(workpath, "temp", "salmon_index"),
+        tmpdir = join(workpath, "temp"),
     resources:
         mem   = allocated("mem",  "isoformswitchanalyzer_salmon_index", cluster),
         time  = allocated("time", "isoformswitchanalyzer_salmon_index", cluster),
     threads: int(allocated("threads", "isoformswitchanalyzer_salmon_index", cluster))
     container: config["images"]["isoformswitchanalyzer"]
     shell: """
+    # Setups temporary directory for
+    # intermediate files with built-in 
+    # mechanism for deletion on exit
+    tmp=$(mktemp -d -p "{params.tmpdir}")
+    trap 'rm -rf "${{tmp}}"' EXIT
+    export TMPDIR="${{tmp}}"
+
     # Build an index for running salmon
     salmon index \\
         --threads {threads} \\
@@ -111,6 +127,13 @@ rule isoformswitchanalyzer_salmon_quant:
     threads: int(allocated("threads", "isoformswitchanalyzer_salmon_quant", cluster))
     container: config["images"]["isoformswitchanalyzer"]
     shell: """
+    # Setups temporary directory for
+    # intermediate files with built-in 
+    # mechanism for deletion on exit
+    tmp=$(mktemp -d -p "{params.tmpdir}")
+    trap 'rm -rf "${{tmp}}"' EXIT
+    export TMPDIR="${{tmp}}"
+
     # Quantifies transcript abundance using Salmon
     salmon quant \\
         --threads {threads} \\
