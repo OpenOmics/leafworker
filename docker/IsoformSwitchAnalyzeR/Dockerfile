@@ -42,6 +42,7 @@ RUN apt-get update \
         locales \
         make \
         python3 \
+        python3-pandas \
         r-bioc-isoformswitchanalyzer \
         r-cran-devtools \
         r-cran-argparse \
