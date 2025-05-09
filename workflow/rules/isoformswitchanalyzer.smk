@@ -37,14 +37,14 @@ rule isoformswitchanalyzer_bam2fastq:
     container: config["images"]["isoformswitchanalyzer"]
     shell: """
     # Setups temporary directory for
-    # intermediate files with built-in 
+    # intermediate files with built-in
     # mechanism for deletion on exit
     tmp=$(mktemp -d -p "{params.tmpdir}")
     trap 'rm -rf "${{tmp}}"' EXIT
     export TMPDIR="${{tmp}}"
 
-    # Creates paired-end FastQ files while 
-    # discarding singletons, supplementary, 
+    # Creates paired-end FastQ files while
+    # discarding singletons, supplementary,
     # and secondary reads using samtools
     samtools collate -@ {threads} -u -O {input.bam} \\
     | samtools fastq \\
@@ -59,7 +59,7 @@ rule isoformswitchanalyzer_bam2fastq:
 rule isoformswitchanalyzer_salmon_index:
     """
     Reference building step to create a index of the
-    transcriptome for salmon. Salmon requires a pre-built 
+    transcriptome for salmon. Salmon requires a pre-built
     index of the transcriptome to perform quantification.
     @Input:
         Transcriptomic FASTA file (singleton)
@@ -81,7 +81,7 @@ rule isoformswitchanalyzer_salmon_index:
     container: config["images"]["isoformswitchanalyzer"]
     shell: """
     # Setups temporary directory for
-    # intermediate files with built-in 
+    # intermediate files with built-in
     # mechanism for deletion on exit
     tmp=$(mktemp -d -p "{params.tmpdir}")
     trap 'rm -rf "${{tmp}}"' EXIT
@@ -102,7 +102,7 @@ rule isoformswitchanalyzer_salmon_quant:
     Data-processing step to get counts using Salmon. Salmon
     is an extremely fast and bias-aware method for transcript
     quantification. It performs a quasi-mapping of reads to the
-    transcriptome and uses a lightweight model to estimate 
+    transcriptome and uses a lightweight model to estimate
     transcript abundance. Salmon has better bias correction
     models than other tools like Kallisto and it is also
     more accurate than Kallisto.
@@ -129,7 +129,7 @@ rule isoformswitchanalyzer_salmon_quant:
     container: config["images"]["isoformswitchanalyzer"]
     shell: """
     # Setups temporary directory for
-    # intermediate files with built-in 
+    # intermediate files with built-in
     # mechanism for deletion on exit
     tmp=$(mktemp -d -p "{params.tmpdir}")
     trap 'rm -rf "${{tmp}}"' EXIT
@@ -149,3 +149,60 @@ rule isoformswitchanalyzer_salmon_quant:
         --posBias
     """
 
+
+rule isoformswitchanalyzer_salmon_matrix:
+    """
+    Data-processing step to get create a transcripts counts
+    matrix of the estimated (raw) and normalized counts.
+    @Input:
+        Sample transcript abundance estimates (gather-across-all-samples)
+    @Output:
+        Raw transcripts counts matrix
+        Normalized transcripts counts matrix
+    """
+    input:
+        counts = expand(join(workpath, "counts", "transcripts", "{name}", "quant.sf"), name=samples),
+    output:
+        raw = join(workpath, "counts", "salmon.transcripts.raw_counts.tsv"),
+        tpm = join(workpath, "counts", "salmon.transcripts.tpm_normalized.tsv"),
+    params:
+        rname  = "salmonmatrix",
+        tmpdir = join(workpath, "temp"),
+        script = join(workpath, "workflow", "scripts", "create_matrix.py"),
+    resources:
+        mem   = allocated("mem",  "isoformswitchanalyzer_salmon_matrix", cluster),
+        time  = allocated("time", "isoformswitchanalyzer_salmon_matrix", cluster),
+    threads: int(allocated("threads", "isoformswitchanalyzer_salmon_matrix", cluster))
+    container: config["images"]["isoformswitchanalyzer"]
+    shell: """
+    # Setups temporary directory for
+    # intermediate files with built-in
+    # mechanism for deletion on exit
+    tmp=$(mktemp -d -p "{params.tmpdir}")
+    trap 'rm -rf "${{tmp}}"' EXIT
+    export TMPDIR="${{tmp}}"
+
+    # Build raw transcripts
+    # counts matrix
+    {params.script} \\
+        --input {input.counts} \\
+        --output {output.raw} \\
+        --join-on Name \\
+        --extract NumReads \\
+        --use-parent-dir-as-sample-name \\
+        --nan-values 0.000
+
+    # Build normalized transcripts
+    # counts matrix
+    {params.script} \\
+        --input {input.counts} \\
+        --output {output.raw} \\
+        --join-on Name \\
+        --extract TPM \\
+        --use-parent-dir-as-sample-name \\
+        --nan-values 0.000000
+
+    # Rename Name column to transcript_id
+    sed -i '1 s/^Name/transcript_id/' {output.raw}
+    sed -i '1 s/^Name/transcript_id/' {output.tpm}
+    """
