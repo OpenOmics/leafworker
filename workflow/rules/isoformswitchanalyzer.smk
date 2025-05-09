@@ -206,3 +206,55 @@ rule isoformswitchanalyzer_salmon_matrix:
     sed -i '1 s/^Name/transcript_id/' {output.raw}
     sed -i '1 s/^Name/transcript_id/' {output.tpm}
     """
+
+
+rule isoformswitchanalyzer_mkgroups:
+    """
+    Data processing step to create a groups file for isoformswitchanalyzer 
+    differential switching script. This is a tab-delimited file containing 
+    at least two of the following columns: 
+        1.  sampleID: basename of each sample
+        2.  condition: sample group inforamtion
+        3+. remaining columns: covariates for correction
+    @Input:
+        Groups file provided to pipeline
+    @Output:
+        IsoformSwitchAnalyzeR groups file for a given comparison
+    """
+    input:
+        sample_sheet = grp_file,
+        # Get salmon counts for case and control groups
+        case_counts = lambda w: expand(join(workpath, "counts", "transcripts", "{name}", "quant.sf"), name=group2samples[w.case]),
+        cntl_counts = lambda w: expand(join(workpath, "counts", "transcripts", "{name}", "quant.sf"), name=group2samples[w.control]),
+    output:
+        grp = join(workpath, "differential_switching", batch_id, "{case}_vs_{control}", "groups_file.tsv"),
+    params:
+        rname = "grpsfile",
+    resources:
+        mem   = allocated("mem",  "isoformswitchanalyzer_mkgroups", cluster),
+        time  = allocated("time", "isoformswitchanalyzer_mkgroups", cluster),
+    threads: int(allocated("threads", "isoformswitchanalyzer_mkgroups", cluster))
+    container: config["images"]["leafcutter"]
+    shell: """
+    # Create groups file for a given comparison:
+    # "{wildcards.case} vs. {wildcards.control}"
+    # First group becomes baseline in contrast,
+    # where:
+    # 1st column    = sampleID
+    # 2nd column    = condition
+    # Nth column(s) = Covariates
+    # Create header for file, IsoformSwitchAnalyzeR
+    # expects the certain column names in design file
+    paste \\
+        <(head -1 {input.sample_sheet} | cut -f1 | sed 's/Sample/sampleID/') \\
+        <(head -1 {input.sample_sheet} | cut -f2 | sed 's/Group/condition/') \\
+        <(head -1 {input.sample_sheet} | cut -f3-) \\
+    > {output.grp}
+    # Create sample sheet for IsoformSwitchAnalyzeR
+    awk -F '\\t' -v OFS='\\t' \\
+        'NR!=1 && $2=="{wildcards.case}" {{print}}' \\
+    >> {output.grp}
+    awk -F '\\t' -v OFS='\\t' \\
+        'NR!=1 && $2=="{wildcards.control}" {{print}}' \\
+    >> {output.grp}
+    """

@@ -130,6 +130,17 @@ rule all:
         # @output of rule isoformswitchanalyzer_salmon_matrix
         provided([join(workpath, "counts", "salmon.transcripts.raw_counts.tsv")], quantify_transcripts != "None"),
         provided([join(workpath, "counts", "salmon.transcripts.tpm_normalized.tsv")], quantify_transcripts != "None"),
+        # Create comparisons sample sheet for running ISA
+        # conditionally runs if the quantify
+        # transcripts option is provided
+        # @imported from rules/isoformswitchanalyzer.smk
+        # @output of rule isoformswitchanalyzer_mkgroups
+        expand(
+            join(workpath, "differential_switching", batch_id, "{case}_vs_{control}", "groups_file.tsv"), 
+            zip, 
+            case=provided(case_groups, quantify_transcripts != "None"), 
+            control=provided(ctrl_groups, quantify_transcripts != "None"),
+        ),
 
 
 # Import rules 
