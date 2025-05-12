@@ -196,7 +196,7 @@ rule isoformswitchanalyzer_salmon_matrix:
     # counts matrix
     {params.script} \\
         --input {input.counts} \\
-        --output {output.raw} \\
+        --output {output.tpm} \\
         --join-on Name \\
         --extract TPM \\
         --use-parent-dir-as-sample-name \\
