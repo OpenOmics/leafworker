@@ -253,8 +253,10 @@ rule isoformswitchanalyzer_mkgroups:
     # Create sample sheet for IsoformSwitchAnalyzeR
     awk -F '\\t' -v OFS='\\t' \\
         'NR!=1 && $2=="{wildcards.case}" {{print}}' \\
+        {input.sample_sheet} \\
     >> {output.grp}
     awk -F '\\t' -v OFS='\\t' \\
         'NR!=1 && $2=="{wildcards.control}" {{print}}' \\
+        {input.sample_sheet} \\
     >> {output.grp}
     """
