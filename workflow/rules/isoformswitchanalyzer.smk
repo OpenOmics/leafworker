@@ -210,9 +210,9 @@ rule isoformswitchanalyzer_salmon_matrix:
 
 rule isoformswitchanalyzer_mkgroups:
     """
-    Data processing step to create a groups file for isoformswitchanalyzer 
-    differential switching script. This is a tab-delimited file containing 
-    at least two of the following columns: 
+    Data processing step to create a groups file for isoformswitchanalyzer
+    differential switching script. This is a tab-delimited file containing
+    at least two of the following columns:
         1.  sampleID: basename of each sample
         2.  condition: sample group inforamtion
         3+. remaining columns: covariates for correction
@@ -228,14 +228,31 @@ rule isoformswitchanalyzer_mkgroups:
         cntl_counts = lambda w: expand(join(workpath, "counts", "transcripts", "{name}", "quant.sf"), name=group2samples[w.control]),
     output:
         grp = join(workpath, "differential_switching", batch_id, "{case}_vs_{control}", "groups_file.tsv"),
+        vec = join(workpath, "differential_switching", batch_id, "{case}_vs_{control}", "sample_vector.tsv"),
     params:
         rname = "grpsfile",
+        # Building string for cntrl
+        # sample to their quant file
+        ctrl2sf = lambda w: "\n".join([
+            "{0}\t{1}".format(
+                str(s),
+                join(workpath, "counts", "transcripts", "{0}".format(s), "quant.sf"),
+            ) for s in sorted(group2samples[w.control])
+        ]),
+        # Building string for case
+        # sample to their quant file
+        case2sf = lambda w: "\n".join([
+            "{0}\t{1}".format(
+                str(s),
+                join(workpath, "counts", "transcripts", "{0}".format(s), "quant.sf")
+            ) for s in sorted(group2samples[w.case])
+        ]),
     resources:
         mem   = allocated("mem",  "isoformswitchanalyzer_mkgroups", cluster),
         time  = allocated("time", "isoformswitchanalyzer_mkgroups", cluster),
     threads: int(allocated("threads", "isoformswitchanalyzer_mkgroups", cluster))
     container: config["images"]["leafcutter"]
-    shell: """
+    shell: textwrap.dedent("""
     # Create groups file for a given comparison:
     # "{wildcards.case} vs. {wildcards.control}"
     # First group becomes baseline in contrast,
@@ -259,4 +276,14 @@ rule isoformswitchanalyzer_mkgroups:
         'NR!=1 && $2=="{wildcards.control}" {{print}}' \\
         {input.sample_sheet} \\
     >> {output.grp}
-    """
+
+    # Create sampleVector file for mapping each
+    # sample to its salmon quant.sf file, where:
+    # 1st column  = Sample ID
+    # 2nd column  = Absolute path to salmon quant.sf
+    echo -e "Name\\tFile" > {output.vec}
+    cat << EOF >> {output.vec}
+    {params.case2sf}
+    {params.ctrl2sf}
+    EOF
+    """)
