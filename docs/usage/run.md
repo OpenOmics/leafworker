@@ -15,7 +15,8 @@ $ leafworker run [--help] \
       [--dry-run] [--job-name JOB_NAME] [--mode {{slurm,local}}] \
       [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \
       [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \
-      [--batch-id BATCH_ID] [--groups GROUPS] [--contrasts CONTRASTS] \
+      [--batch-id BATCH_ID] [--quantify-transcripts QUANTIFY_TRANSCRIPTS] \
+      [--groups GROUPS] [--contrasts CONTRASTS] \
       --input INPUT [INPUT ...] \
       --output OUTPUT \
       --gtf GTF
@@ -69,6 +70,24 @@ Each of the following arguments are optional, and do not need to be provided.
 > This option can be provided to ensure that differential splicing output files are not over-written between runs of the pipeline after updating the group file with additional covariates or dropping samples. By default, project-level files in "differential_splicing" could get over-written between pipeline runs if this option is not provided. The output directory name for a given contrast will resolve to `{group1}_vs_{group2}` within the **differential_splicing** folder. As so, if the groups file is updated to remove samples or add additional covariates without updating the group names, it could over write the previous analyses output files. Any identifer provided to this option will be used to create a sub directory in the "differential_splicing" folder. This ensures project-level files (which are unique) will not get over written. With that being said, it is always a good idea to provide this option. A unique batch id should be provided between runs. This batch id should be composed of alphanumeric characters and it should not contain a white space or tab characters. Here is a list of valid or acceptable characters: `aA-Zz`, `0-9`, `-`, `_`.
 > 
 > ***Example:*** `--batch-id 2025_04_08`
+
+---  
+  `--quantify-transcripts QUANTIFY_TRANSCRIPTS`
+> **FASTA file of transcripts to quantify.**   
+> *type: FASTA file*  
+> *default: None*   
+>
+> If this file is provided, an extra set of steps will run to estimate transcript expression using Salmon. If this option is also provided with a groups and contrasts file, an additional set of steps will run identify isoform switches using IsoformSwitchAnalyzeR. The provided FASTA file should contain transcripts annotated in the GTF file. 
+>
+> If your annotation is from GENCODE, you can download a matching transcriptomic FASTA file from the same page the annotation was downloaded. You can also generated a transcriptomic FASTA file using gffread from the cufflinks suite via the following command:
+> 
+> ```bash
+> gffread -w transcripts.fa -g genome.fa gencode.annotation.gtf.gz
+> ```
+>
+> **Please note:** If you intend to generate your own transcript.fa file using the command above, please provide the genomic FASTA file that was used to create the input BAM files and the same annotation provided to the pipeline's gtf option (i.e. `--gtf`).  
+> 
+> ***Example:*** `--quantify-transcripts transcripts.fa`  
 
 ---  
   `--groups GROUPS`
