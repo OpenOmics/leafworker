@@ -6,7 +6,7 @@ from snakemake.io import expand
 # Local imports
 from scripts.common import (
     allocated,
-    provided, 
+    provided,
     str_bool
 )
 
@@ -24,18 +24,18 @@ batch_id = config['options']['batch_id']       # Batch Identifer, default: ''.
 quantify_transcripts = config['options'].get('quantify_transcripts')
 
 # Differential splicing options
-# Dictionary mapping each group (key) 
+# Dictionary mapping each group (key)
 # to a list of samples (value)
 group2samples = config['project']['groups']    # i.e. {"G1": ["S1", "S2"], "G2": ["S3", "S4"], ...}
-# Nested list containing each 
-# comparsion of interest   
+# Nested list containing each
+# comparsion of interest
 contrasts     = config['project']['contrast'] # i.e. [["G2", "G2"], ...]
 case_groups  = [g1 for g1,g2 in contrasts]
 ctrl_groups  = [g2 for g1,g2 in contrasts]
 
 
 # Read in resource information,
-# containing information about 
+# containing information about
 # threads, mem, walltimes, etc.
 # TODO: Add handler for when the
 # mode is set to local.
@@ -60,7 +60,7 @@ rule all:
         join(workpath, "temp", "junction_files.txt"),
         # Clustering output file,
         # @imported from rules/leafcutter.smk
-        # @output of rule leafcutter_clusterjuncs  
+        # @output of rule leafcutter_clusterjuncs
         join(workpath, "junctions", "leafcutter_perind.counts.gz"),
         # Clustering output file,
         # @imported from rules/leafcutter.smk
@@ -72,7 +72,7 @@ rule all:
         # @imported from rules/leafcutter.smk
         # @output of rule leafcutter_mkgroups
         expand(
-            join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "groups_file.tsv"), 
+            join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "groups_file.tsv"),
             zip, case=case_groups, control=ctrl_groups
         ),
         # Create exons reference file for
@@ -84,7 +84,7 @@ rule all:
         # @imported from rules/leafcutter.smk
         # @output of rule leafcutter_diffsplicing
         expand(
-            join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "diff_splicing_cluster_significance.txt"), 
+            join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "diff_splicing_cluster_significance.txt"),
             zip, case=case_groups, control=ctrl_groups
         ),
         # Create input for shiny application
@@ -92,12 +92,12 @@ rule all:
         # @imported from rules/leafcutter.smk
         # @output of rule leafcutter_prepleafviz
         expand(
-            join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "{case}_vs_{control}_leafviz.Rdata"), 
+            join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "{case}_vs_{control}_leafviz.Rdata"),
             zip, case=case_groups, control=ctrl_groups
         ),
         # Convert BAM files to FastQ files,
         # conditionally runs if the quantify
-        # transcripts option is provided. 
+        # transcripts option is provided.
         # @imported from rules/isoformswitchanalyzer.smk
         # @output of rule isoformswitchanalyzer_bam2fastq
         expand(
@@ -110,13 +110,13 @@ rule all:
         ),
         # Create salmon index,
         # conditionally runs if the quantify
-        # transcripts option is provided. 
+        # transcripts option is provided.
         # @imported from rules/isoformswitchanalyzer.smk
         # @output of rule isoformswitchanalyzer_salmon_index
         provided([join(workpath, "temp", "salmon_index", "seq.bin")], quantify_transcripts != "None"),
         # Run salmon quant to get transcript counts,
         # conditionally runs if the quantify
-        # transcripts option is provided. 
+        # transcripts option is provided.
         # @imported from rules/isoformswitchanalyzer.smk
         # @output of rule isoformswitchanalyzer_salmon_quant
         expand(
@@ -132,18 +132,31 @@ rule all:
         provided([join(workpath, "counts", "salmon.transcripts.tpm_normalized.tsv")], quantify_transcripts != "None"),
         # Create comparisons sample sheet for running ISA
         # conditionally runs if the quantify
-        # transcripts option is provided
+        # transcripts option is provided and
+        # there are groups/contrasts.
         # @imported from rules/isoformswitchanalyzer.smk
         # @output of rule isoformswitchanalyzer_mkgroups
         expand(
-            join(workpath, "differential_switching", batch_id, "{case}_vs_{control}", "groups_file.tsv"), 
-            zip, 
-            case=provided(case_groups, quantify_transcripts != "None"), 
+            join(workpath, "differential_switching", batch_id, "{case}_vs_{control}", "groups_file.tsv"),
+            zip,
+            case=provided(case_groups, quantify_transcripts != "None"),
+            control=provided(ctrl_groups, quantify_transcripts != "None"),
+        ),
+        # Quantify differential isoform switches,
+        # conditionally runs if the quantify
+        # transcripts option is provided and
+        # there are groups/contrasts.
+        # @imported from rules/isoformswitchanalyzer.smk
+        # @output of rule isoformswitchanalyzer_diffswitching
+        expand(
+            join(workpath, "differential_switching", batch_id, "{case}_vs_{control}", "{case}-{control}_top_isoform_switches.tsv"),
+            zip,
+            case=provided(case_groups, quantify_transcripts != "None"),
             control=provided(ctrl_groups, quantify_transcripts != "None"),
         ),
 
 
-# Import rules 
+# Import rules
 include: join("rules", "leafcutter.smk")
 include: join("rules", "isoformswitchanalyzer.smk")
 include: join("rules", "common.smk")

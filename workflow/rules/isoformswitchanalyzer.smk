@@ -25,8 +25,8 @@ rule isoformswitchanalyzer_bam2fastq:
     input:
         bam   = join(workpath, "{name}.bam"),
     output:
-        r1 = temp(join(workpath, "fastqs", "{name}.R1.fastq.gz")),
-        r2 = temp(join(workpath, "fastqs", "{name}.R2.fastq.gz")),
+        r1 = join(workpath, "fastqs", "{name}.R1.fastq.gz"),
+        r2 = join(workpath, "fastqs", "{name}.R2.fastq.gz"),
     params:
         rname  = "bam2fqs",
         tmpdir = join(workpath, "temp"),
@@ -217,9 +217,10 @@ rule isoformswitchanalyzer_mkgroups:
         2.  condition: sample group inforamtion
         3+. remaining columns: covariates for correction
     @Input:
-        Groups file provided to pipeline
+        Groups file provided to pipeline (indirect-gather-per-contrast)
     @Output:
         IsoformSwitchAnalyzeR groups file for a given comparison
+        Sample vector file for a given comparison
     """
     input:
         sample_sheet = grp_file,
@@ -287,3 +288,52 @@ rule isoformswitchanalyzer_mkgroups:
     {params.ctrl2sf}
     EOF
     """)
+
+
+rule isoformswitchanalyzer_diffswitching:
+    """
+    Data-processing step to find differential isoform switches using the R package,
+    IsoformSwitchAnalyzer. This step uses the groups file created in the previous step and
+    the sample vector file to find differential isoform switches. The groups file is a
+    tab-delimited file containing at least two of the following columns:
+        1.  sampleID: basename of each sample
+        2.  condition: sample group inforamtion
+        3+. remaining columns: covariates for correction
+    The sample vector file is a tab-delimited file containing the following columns:
+        1.  Name: basename of each sample
+        2.  File: absolute path to the salmon quant.sf file
+    @Input:
+        Groups file for a given comparison (indirect-gather-per-contrast)
+         Sample vector file for a given comparison
+    @Output:
+        Differential isoform switching results
+    """
+    input:
+        grp = join(workpath, "differential_switching", batch_id, "{case}_vs_{control}", "groups_file.tsv"),
+        vec = join(workpath, "differential_switching", batch_id, "{case}_vs_{control}", "sample_vector.tsv"),
+    output:
+        swt = join(workpath, "differential_switching", batch_id, "{case}_vs_{control}", "{case}-{control}_top_isoform_switches.tsv"),
+
+    params:
+        rname  = "diffswitch",
+        outdir = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}"),
+        script = join(workpath, "workflow", "scripts", "isoformswitchanalyzer.R"),
+        gtf    = gtf_file,
+        transcripts = quantify_transcripts,
+    resources:
+        mem   = allocated("mem",  "isoformswitchanalyzer_diffswitching", cluster),
+        time  = allocated("time", "isoformswitchanalyzer_diffswitching", cluster),
+    threads: int(allocated("threads", "isoformswitchanalyzer_diffswitching", cluster))
+    container: config["images"]["isoformswitchanalyzer"]
+    shell: """
+    # Run differential switching analysis for:
+    #   {wildcards.case} vs. {wildcards.control}
+    {params.script} \\
+        -i {input.vec} \\
+        -o {params.outdir} \\
+        --sample_sheet {input.grp} \\
+        --gtf_file {params.gtf} \\
+        --transcriptome_fa {params.transcripts} \\
+        --condition_1 {wildcards.case} \\
+        --condition_2 {wildcards.control}
+    """
