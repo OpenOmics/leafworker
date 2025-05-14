@@ -19,5 +19,9 @@
     "isoformswitchanalyzer_salmon_quant": {
         "threads": "4",
         "mem": "32g"
+    },
+    "isoformswitchanalyzer_diffswitching": {
+        "threads": "4",
+        "mem": "64g"
     }
 }

@@ -335,5 +335,6 @@ rule isoformswitchanalyzer_diffswitching:
         --gtf_file {params.gtf} \\
         --transcriptome_fa {params.transcripts} \\
         --condition_1 {wildcards.case} \\
-        --condition_2 {wildcards.control}
+        --condition_2 {wildcards.control} \\
+        --method saturn
     """
