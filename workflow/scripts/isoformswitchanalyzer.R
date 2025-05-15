@@ -28,14 +28,16 @@ timestamp <- function(...) { cat("[", format(Sys.time()), "]", ..., "\n") ; }
 # annotation information:
 # https://rdrr.io/bioc/IsoformSwitchAnalyzeR/man/importRdata.html
 isa_import <- function(
-        sample2counts,  # TSV file to map each sample to their counts file
-        output_dir,     # Output directory to write the results   
-        sample_sheet,   # Sample sheet (TSV), needs sampleID and condition cols
-        gtf_file,       # GTF file used for alignment and isoform quantification
-        transcripts_fa, # Path to the transcriptomic fasta file
-        condition_1,    # Group1 in the contrast, creates comparison g1 vs. g2
-        condition_2,    # Group2 in the contrast, creates comparison g1 vs. g2
-        run_sva = FALSE # Automatically detect and correct unwanted sources of variation
+        sample2counts,       # TSV file to map each sample to their counts file
+        output_dir,          # Output directory to write the results   
+        sample_sheet,        # Sample sheet (TSV), needs sampleID and condition cols
+        gtf_file,            # GTF file used for alignment and isoform quantification
+        transcripts_fa,      # Path to the transcriptomic fasta file
+        condition_1,         # Group1 in the contrast, creates comparison g1 vs. g2
+        condition_2,         # Group2 in the contrast, creates comparison g1 vs. g2
+        run_sva = FALSE,     # Automatically detect and correct unwanted sources of variation
+        alpha_filter = 1.0,  # Adjusted p-value filter, default no filtering 
+        dif_filter = 0.0     # Differential isoform fraction filter, default no filtering
     ) {
 
     # Import the sample sheet with
@@ -121,9 +123,9 @@ isa_import <- function(
         switchAnalyzeRlist = isa_list,
         geneExpressionCutoff = 1,
         isoformExpressionCutoff = 0,
-        IFcutoff = 0.01,
-        alpha = 0.05,
-        dIFcutoff = 0.1,
+        IFcutoff = dif_filter,
+        alpha = alpha_filter,
+        dIFcutoff = dif_filter,
         quiet = FALSE
     )
 
@@ -153,7 +155,7 @@ parser <- ArgumentParser()
 # s8    /path/to/s8/quant.sf
 parser$add_argument(
     "-i", "--input_sample_to_counts_file",
-    help = "A TSV file containing the basename of each sample and the absolute path to its per sample counts, must contain two columns 'Name' and 'File'.",
+    help = "A TSV file containing the basename of each sample and the absolute path to its per sample counts, must contain two columns 'Name' and 'File', required.",
     type = "character",
     required = TRUE
 )
@@ -172,7 +174,7 @@ parser$add_argument(
 # combined GTF file
 parser$add_argument(
     "-g", "--gtf_file",
-    help = "Path to the GTF file used for alignment and isoform quantification",
+    help = "Path to the GTF file used for alignment and isoform quantification, required",
     type = "character",
     required = TRUE
 )
@@ -180,7 +182,7 @@ parser$add_argument(
 # Path to transcriptomic FASTA file
 parser$add_argument(
     "-t", "--transcriptome_fa",
-    help = "Path to the transcriptomic fasta file",
+    help = "Path to the transcriptomic fasta file, required",
     type = "character",
     required = TRUE
 )
@@ -200,7 +202,7 @@ parser$add_argument(
 # s8        WT          B0
 parser$add_argument(
     "-s", "--sample_sheet",
-    help = "Path to the sample sheet, must contain 'sampleID' & 'condition' columns, remaining columns are treated as covariates.",
+    help = "Path to the sample sheet, must contain 'sampleID' & 'condition' columns, remaining columns are treated as covariates, required.",
     type = "character",
     required = TRUE
 )
@@ -208,7 +210,7 @@ parser$add_argument(
 # Perform correction using SVA
 parser$add_argument(
     "-a", "--sva_correction",
-    help = "A flag indicating whether sva should be used to automatically detect and correct for any unwanted variation found in your data, default:False .",
+    help = "A flag indicating whether sva should be used to automatically detect and correct for any unwanted variation found in your data, default: False .",
     action = "store_true",
     default = FALSE
 )
@@ -218,7 +220,7 @@ parser$add_argument(
 # group1 vs. group2
 parser$add_argument(
     "-c1", "--condition_1",
-    help = "Group1 in the contrast, the contrast will be 'group1 vs. group2'",
+    help = "Group1 in the contrast, the contrast will be 'group1 vs. group2', required.",
     type = "character",
     required = TRUE
 )
@@ -228,7 +230,7 @@ parser$add_argument(
 # group1 vs. group2
 parser$add_argument(
     "-c2", "--condition_2",
-    help = "Group2 in the contrast, the contrast will be 'group1 vs. group2'. This represents the baseline group in the comparison.",
+    help = "Group2 in the contrast, the contrast will be 'group1 vs. group2'. This represents the baseline group in the comparison, required.",
     type = "character",
     required = TRUE
 )
@@ -247,6 +249,30 @@ parser$add_argument(
     required = FALSE,
     default = "dexseq",
     choices=c("dexseq", "saturn")
+)
+
+
+# Alpha or p-value threshold for
+# filtering the results, default
+# has no filtering
+parser$add_argument(
+    "-p", "--pvalue_filter",
+    help = "Alpha or adjusted p-value threshold for filtering the results, default: 1.0",
+    type = "double",
+    required = FALSE,
+    default = 1.0
+)
+
+# Differential isoform fraction
+# threshold for filtering the 
+# results, analogous to a fold-
+# change, default has no filter
+parser$add_argument(
+    "-f", "--dif_filter",
+    help = "Differential isoform fraction threshold, similar to fold-change, for filtering the results, default: 0.0",
+    type = "double",
+    required = FALSE,
+    default = 0.0
 )
 
 # Parse the command line arguments
@@ -272,7 +298,9 @@ isa_list <- isa_import(
     condition_1 = args$condition_1,
     condition_2 = args$condition_2,
     transcripts_fa = args$transcriptome_fa,
-    run_sva = args$sva_correction
+    run_sva = args$sva_correction,
+    alpha_filter = args$pvalue_filter,
+    dif_filter = args$dif_filter
 )
 
 # Print summary
@@ -288,90 +316,31 @@ summary(isa_list)
 # isoform, as indicated by the
 # alpha and dIFcutoff cutoffs
 statistical_method <- args$method
+# Save a copy of the isa_list object
+# before the switching test for debugging
+save.image(file = paste(prefix, "_IsoformSwitchAnalyzeR.Rdata", sep = ""))
 if (statistical_method == "dexseq") {
     timestamp('Started running isoformSwitchTestDEXSeq step...')
     isa_list <- isoformSwitchTestDEXSeq(
         switchAnalyzeRlist = isa_list,
         reduceToSwitchingGenes = TRUE,
-        alpha = 0.05,
-        dIFcutoff = 0.1,
+        alpha = args$pvalue_filter,
+        dIFcutoff = args$dif_filter,
         showProgress = TRUE,
         quiet = FALSE
     )
 } else {
-    timestamp('Started running iisoformSwitchTestSatuRn step...')
+    timestamp('Started running isoformSwitchTestSatuRn step...')
     isa_list <- isoformSwitchTestSatuRn(
         switchAnalyzeRlist = isa_list,
         reduceToSwitchingGenes = TRUE,
-        alpha = 0.05,
-        dIFcutoff = 0.1,
+        alpha = args$pvalue_filter,
+        dIFcutoff = args$dif_filter,
         showProgress = TRUE,
         quiet = FALSE
     )
 }
 
-# Run alternative splicing analysis
-# to quantifty different alternative
-# splicing events, such as exon skipping,
-# alternative 5' and 3' splice sites,
-# intron retention, etc.
-timestamp('Started running analyzeAlternativeSplicing step...')
-isa_list <- analyzeAlternativeSplicing(
-    switchAnalyzeRlist = isa_list,
-    onlySwitchingGenes = TRUE,
-    alpha = 0.05,
-    dIFcutoff = 0.1,
-    showProgress = TRUE,
-    quiet = FALSE
-)
-
-# Visualize the results
-# Create splicing summary plot
-pdf(paste(prefix, "_splicing_summary.pdf", sep = ""))
-timestamp('Started running extractSplicingSummary step...')
-extractSplicingSummary(
-    isa_list,
-    splicingToAnalyze = 'all',
-    asFractionTotal = FALSE,
-    onlySigIsoforms = FALSE,
-    plotGenes = FALSE,
-    localTheme = theme_bw(),
-)
-dev.off()
-
-# Create splicing enrichment plot
-pdf(paste(prefix, "_splicing_enrichment.pdf", sep = ""))
-timestamp('Started running extractSplicingEnrichment step...')
-splicing_enrichment <- extractSplicingEnrichment(
-    isa_list,
-    splicingToAnalyze = 'all',
-    alpha = 0.05,
-    dIFcutoff = 0.1,
-    plot = TRUE,
-    localTheme = theme_bw(base_size = 14),
-    minEventsForPlotting = 10,
-    returnResult = TRUE,
-    returnSummary = TRUE
-)
-dev.off()
-
-# Create genome wide splicing plot
-pdf(paste(prefix, "_genome_wide_splicing.pdf", sep = ""))
-timestamp('Started running extractSplicingGenomeWide step...')
-genome_wide_splicing <- extractSplicingGenomeWide(
-    isa_list,
-    featureToExtract = 'all',
-    splicingToAnalyze = 'all',
-    alpha = 0.05,
-    dIFcutoff = 0.1,
-    log2FCcutoff = 1,
-    violinPlot = TRUE,
-    alphas = c(0.05, 0.001),
-    localTheme = theme_bw(),
-    plot = TRUE,
-    returnResult = TRUE
-)
-dev.off()
 
 # Extract the top gene and isoform switches
 timestamp('Started running gene extractTopSwitches step...')
@@ -379,8 +348,8 @@ top_gene_switches <- extractTopSwitches(
     switchAnalyzeRlist = isa_list,
     filterForConsequences = FALSE,
     extractGenes = TRUE,    # extract genes
-    alpha = 0.05,
-    dIFcutoff = 0.1,
+    alpha = args$pvalue_filter,
+    dIFcutoff = args$dif_filter,
     sortByQvals = TRUE,
     n = Inf
 )
@@ -390,8 +359,8 @@ top_isoform_switches <- extractTopSwitches(
     switchAnalyzeRlist = isa_list,
     filterForConsequences = FALSE,
     extractGenes = FALSE,   # extract isoforms
-    alpha = 0.05,
-    dIFcutoff = 0.1,
+    alpha = args$pvalue_filter,
+    dIFcutoff = args$dif_filter,
     sortByQvals = TRUE,
     n = Inf
 )
@@ -414,24 +383,8 @@ write.table(
     quote = FALSE,
     row.names = FALSE
 )
-# Splicing enrichment
-write.table(
-    splicing_enrichment,
-    file = paste(prefix, "_splicing_enrichment.tsv", sep = ""),
-    sep = "\t",
-    quote = FALSE,
-    row.names = FALSE
-)
-# Genome wide splicing
-write.table(
-    genome_wide_splicing,
-    file = paste(prefix, "_genome_wide_splicing.tsv", sep = ""),
-    sep = "\t",
-    quote = FALSE,
-    row.names = FALSE
-)
 
 # Save all R objects to an Rdata
 # file for future figures or analysis
-timestamp('Saving IsoformSwitchAnalyzeR object to an RDS file...')
+timestamp('Saving IsoformSwitchAnalyzeR object to an Rdata file...')
 save.image(file = paste(prefix, "_IsoformSwitchAnalyzeR.Rdata", sep = ""))
