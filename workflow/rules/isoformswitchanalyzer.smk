@@ -316,7 +316,7 @@ rule isoformswitchanalyzer_diffswitching:
 
     params:
         rname  = "diffswitch",
-        outdir = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}"),
+        outdir = join(workpath, "differential_switching", batch_id, "{case}_vs_{control}"),
         script = join(workpath, "workflow", "scripts", "isoformswitchanalyzer.R"),
         gtf    = gtf_file,
         transcripts = quantify_transcripts,
