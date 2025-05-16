@@ -367,6 +367,7 @@ top_isoform_switches <- extractTopSwitches(
 
 # Write the results to output files
 timestamp('Started writing file output files...')
+setwd(outdir)
 # Gene switches
 write.table(
     top_gene_switches,
