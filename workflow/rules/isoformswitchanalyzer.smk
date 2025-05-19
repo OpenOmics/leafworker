@@ -334,7 +334,7 @@ rule isoformswitchanalyzer_diffswitching:
         --sample_sheet {input.grp} \\
         --gtf_file {params.gtf} \\
         --transcriptome_fa {params.transcripts} \\
-        --condition_1 {wildcards.case} \\
-        --condition_2 {wildcards.control} \\
+        --case_group {wildcards.case} \\
+        --control_group {wildcards.control} \\
         --method saturn
     """

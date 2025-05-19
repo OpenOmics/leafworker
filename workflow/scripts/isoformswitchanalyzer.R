@@ -33,8 +33,8 @@ isa_import <- function(
         sample_sheet,        # Sample sheet (TSV), needs sampleID and condition cols
         gtf_file,            # GTF file used for alignment and isoform quantification
         transcripts_fa,      # Path to the transcriptomic fasta file
-        condition_1,         # Group1 in the contrast, creates comparison g1 vs. g2
-        condition_2,         # Group2 in the contrast, creates comparison g1 vs. g2
+        case_group,          # Group1 in the contrast, creates comparison g1 vs. g2
+        control_group,       # Group2 in the contrast, creates comparison g1 vs. g2
         run_sva = FALSE,     # Automatically detect and correct unwanted sources of variation
         alpha_filter = 1.0,  # Adjusted p-value filter, default no filtering 
         dif_filter = 0.0     # Differential isoform fraction filter, default no filtering
@@ -57,17 +57,18 @@ isa_import <- function(
     # Filter the design matrix to only
     # include the samples of interest
     design_matrix <- design_matrix[
-        design_matrix$condition == condition_1 | design_matrix$condition == condition_2,
+        design_matrix$condition == case_group | design_matrix$condition == control_group,
     ]
 
     # Create a contrast/comparison
     # data frame object, must contain
     # the following columns:
-    #     - 'condition_1' ~ i.e Case
-    #     - 'condition_2' ~ i.e Control (baseline group)
+    #     - 'condition_2' ~ i.e Case
+    #     - 'condition_1' ~ i.e Control (baseline group)
+    # dIF = IF2 - IF1
     comparison <- data.frame(
-        condition_1 = condition_1,
-        condition_2 = condition_2
+        condition_1 = control_group,
+        condition_2 = case_group
     )
 
     # Import the per-sample salmon
@@ -219,7 +220,7 @@ parser$add_argument(
 # the resulting contrast will be
 # group1 vs. group2
 parser$add_argument(
-    "-c1", "--condition_1",
+    "-c1", "--case_group",
     help = "Group1 in the contrast, the contrast will be 'group1 vs. group2', required.",
     type = "character",
     required = TRUE
@@ -229,7 +230,7 @@ parser$add_argument(
 # the resulting contrast will be
 # group1 vs. group2
 parser$add_argument(
-    "-c2", "--condition_2",
+    "-c2", "--control_group",
     help = "Group2 in the contrast, the contrast will be 'group1 vs. group2'. This represents the baseline group in the comparison, required.",
     type = "character",
     required = TRUE
@@ -281,7 +282,7 @@ args <- parser$parse_args()
 # Create output directory
 # if it does not exist
 outdir <- args$output_directory
-comparison <- paste(args$condition_1, args$condition_2, sep = "-")
+comparison <- paste(args$case_group, args$control_group, sep = "-")
 prefix <- file.path(outdir, comparison)
 dir.create(
     file.path(outdir),
@@ -295,8 +296,8 @@ isa_list <- isa_import(
     output_dir = args$output_directory,
     sample_sheet = args$sample_sheet,
     gtf_file = args$gtf_file,
-    condition_1 = args$condition_1,
-    condition_2 = args$condition_2,
+    case_group = args$case_group,
+    control_group = args$control_group,
     transcripts_fa = args$transcriptome_fa,
     run_sva = args$sva_correction,
     alpha_filter = args$pvalue_filter,
