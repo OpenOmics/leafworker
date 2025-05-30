@@ -32,6 +32,10 @@ rule leafcutter_gtf2exons:
     threads: int(allocated("threads", "leafcutter_gtf2exons", cluster))
     container: config["images"]["leafcutter"]
     shell: """
+    # Unset any R-related env variables
+    # that may have been inherited from
+    # the user environment
+    unset R_LIBS_USER; unset R_LIBS_SITE;
     # Get information for each exon, i.e
     # chr, start, end, strand, gene_name
     gtf_to_exons.R \\
@@ -345,6 +349,10 @@ rule leafcutter_diffsplicing:
     threads: int(allocated("threads", "leafcutter_diffsplicing", cluster))
     container: config["images"]["leafcutter"]
     shell: """
+    # Unset any R-related env variables
+    # that may have been inherited from
+    # the user environment
+    unset R_LIBS_USER; unset R_LIBS_SITE;
     # Run differential splicing analysis for:
     #   {wildcards.case} vs. {wildcards.control}
     leafcutter_ds.R \\
@@ -392,6 +400,10 @@ rule leafcutter_prepleafviz:
     threads: int(allocated("threads", "leafcutter_prepleafviz", cluster))
     container: config["images"]["leafcutter"]
     shell: """
+    # Unset any R-related env variables
+    # that may have been inherited from
+    # the user environment
+    unset R_LIBS_USER; unset R_LIBS_SITE;
     # Create input leafviz Rdata file for:
     # "{wildcards.case} vs. {wildcards.control}"
     prepare_results.R \\

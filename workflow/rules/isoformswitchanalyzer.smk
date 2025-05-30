@@ -326,6 +326,10 @@ rule isoformswitchanalyzer_diffswitching:
     threads: int(allocated("threads", "isoformswitchanalyzer_diffswitching", cluster))
     container: config["images"]["isoformswitchanalyzer"]
     shell: """
+    # Unset any R-related env variables
+    # that may have been inherited from
+    # the user environment
+    unset R_LIBS_USER; unset R_LIBS_SITE;
     # Run differential switching analysis for:
     #   {wildcards.case} vs. {wildcards.control}
     {params.script} \\
