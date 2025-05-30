@@ -263,10 +263,8 @@ rule isoformswitchanalyzer_mkgroups:
     # Nth column(s) = Covariates
     # Create header for file, IsoformSwitchAnalyzeR
     # expects the certain column names in design file
-    paste \\
-        <(head -1 {input.sample_sheet} | cut -f1 | sed 's/Sample/sampleID/') \\
-        <(head -1 {input.sample_sheet} | cut -f2 | sed 's/Group/condition/') \\
-        <(head -1 {input.sample_sheet} | cut -f3-) \\
+    awk -F '\\t' -v OFS='\\t' \\
+        'NR==1 {{$1="sampleID"; $2="condition"; print}}' \\
     > {output.grp}
     # Create sample sheet for IsoformSwitchAnalyzeR
     awk -F '\\t' -v OFS='\\t' \\
