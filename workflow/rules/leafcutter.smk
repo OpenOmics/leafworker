@@ -391,9 +391,11 @@ rule leafcutter_prepleafviz:
         itn = join(workpath, "temp", "annotation_all_introns.bed.gz"),
     output:
         rda = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "{case}_vs_{control}_leafviz.Rdata"),
+        itn = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "{case}_vs_{control}_intron_annotation.tsv"),
     params:
         rname  = "prleafviz",
         prefix = join(workpath, "temp", "annotation"),
+        rscript = join(workpath, "workflow", "scripts", "intron_annotation.R"),
     resources:
         mem   = allocated("mem",  "leafcutter_prepleafviz", cluster),
         time  = allocated("time", "leafcutter_prepleafviz", cluster),
@@ -415,4 +417,11 @@ rule leafcutter_prepleafviz:
         {input.eff} \\
         {params.prefix} \\
         -o {output.rda}
+    # Write the "intron" annotation table 
+    # within the Rdata object to an output
+    # file for adding more information to
+    # the effect sizes output file
+    {params.rscript} \\
+        "{output.rda}" \\
+        "{output.itn}"
     """
