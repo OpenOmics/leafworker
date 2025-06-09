@@ -25,6 +25,7 @@ _HELP = dedent("""
         • transcript_name
         • exon_id
         • exon_number
+        • exon_seqname
         • exon_start
         • exon_end
         • exon_length
@@ -271,7 +272,7 @@ if __name__ == '__main__':
         "exon_id", "exon_number"
     ]
     # Location attributes of the exon
-    LOC_ATTRS = ["start", "end", "length"]
+    LOC_ATTRS = ["seqname", "start", "end", "length"]
     FEATURE = "exon"
     # Output TSV file handle
     with open(args.output, 'w') as out_fh:
