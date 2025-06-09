@@ -24,8 +24,10 @@ rule leafcutter_gtf2exons:
         gtf   = gtf_file
     output:
         exons = join(workpath, "temp", "exons.tsv.gz"),
+        ann   = join(workpath, "temp", "exon_annotation.tsv"),
     params:
         rname = "gtf2exons",
+        pyscript = join(workpath, "workflow", "scripts", "exon_annotation.py"),
     resources:
         mem   = allocated("mem",  "leafcutter_gtf2exons", cluster),
         time  = allocated("time", "leafcutter_gtf2exons", cluster),
@@ -41,6 +43,17 @@ rule leafcutter_gtf2exons:
     gtf_to_exons.R \\
         {input.gtf} \\
         {output.exons}
+    # Parse and write exon information to
+    # an output file for adding to the 
+    # effect sizes output file. This file
+    # contains the following information:
+    # gene_id, gene_name, transcript_id, 
+    # transcript_name, exon_id, exon_number,
+    # exon_start, exon_end, exon_length
+    echo 'Getting detailed exon information...'
+    {params.pyscript} \\
+        --input {input.gtf} \\
+        --output {output.ann}
     """
 
 
