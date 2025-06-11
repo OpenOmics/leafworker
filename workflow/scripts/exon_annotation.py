@@ -8,12 +8,12 @@ from textwrap import dedent
 import argparse, gzip, os, sys
 
 # Constants
-# Usage and help section 
+# Usage and help section
 _HELP = dedent("""
 @Usage:
     $ ./exon_annotation.py [-h] [--version] \\
             --input GTF_FILE \\
-            --output TSV_FILE 
+            --output TSV_FILE
 
 @About:
     Given an annotation in GTF format, this script
@@ -28,8 +28,9 @@ _HELP = dedent("""
         • exon_seqname
         • exon_start
         • exon_end
+        • exon_strand
         • exon_length
-    
+
     If the 9th column of the GTF file does not
     contain the attributes listed above, they
     will resolve to "Unknown" in the output file.
@@ -41,7 +42,6 @@ _HELP = dedent("""
         file as input.
     -o, --output TSV_FILE
         Output TSV file with parsed exon information.
-
 @Options:
     -h, --help     Shows this help message and exits.
     -v, --version  Prints the version and exits.
@@ -199,7 +199,7 @@ def parsed_feature(
         Default is 'exon'.
     @param parse <list[str]>:
         List of attributes to parse from the GTF file.
-        Default includes: 
+        Default includes:
             - gene_id, gene_name
             - transcript_id, transcript_name
             - exon_id, exon_number
@@ -208,19 +208,19 @@ def parsed_feature(
         The attribute key contains a dictionary of parsed
         attributes from the 9th column of the GTF file.
     """
-    # Handler for uncompressed files 
+    # Handler for uncompressed files
     open_func = open
     if gtf_file.endswith('.gz'):
         # Handler for gzip files
         open_func = gzip.open
-    
-    line_number = 0  # Used for error reporting 
+
+    line_number = 0  # Used for error reporting
     with open_func(gtf_file, 'rt') as fh:
         for line in fh:
             line_number += 1
             if line.startswith('#'):
                 # Skip comment lines
-                continue 
+                continue
             # Split the line into columns
             tokens = line.strip().split('\t')
             if len(tokens) < 9:
@@ -246,24 +246,24 @@ def parsed_feature(
 if __name__ == '__main__':
     # Parse command line arguments
     args = parse_cli_arguments()
-    
+
     # Sanity check for usage
     if len(sys.argv) == 1:
         # Nothing was provided
         fatal('Invalid usage: {0} [-h] ...'.format(os.path.basename(sys.argv[0])))
-    
+
     # Create output directory if
     # it does not exist
     output_dir = os.path.abspath(os.path.dirname(args.output))
     if not os.path.exists(output_dir):
         try: os.makedirs(output_dir)
-        except OSError as e: 
+        except OSError as e:
             fatal(
                 "Fatal error: Failed to create output directory: {0}\n{1}".format(
                     output_dir, e
                 )
             )
-    
+
     # Attributes (key, value pairs) to parse
     # from the 9th column of the GTF file
     PARSE_ATTRS=[
@@ -272,7 +272,7 @@ if __name__ == '__main__':
         "exon_id", "exon_number"
     ]
     # Location attributes of the exon
-    LOC_ATTRS = ["seqname", "start", "end", "length"]
+    LOC_ATTRS = ["seqname", "start", "end", "strand", "length"]
     FEATURE = "exon"
     # Output TSV file handle
     with open(args.output, 'w') as out_fh:
@@ -292,4 +292,3 @@ if __name__ == '__main__':
             output_line = attr_list + loc_list
             # Write to output file
             out_fh.write("{0}\n".format('\t'.join(output_line)))
- 
