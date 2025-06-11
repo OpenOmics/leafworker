@@ -4,6 +4,7 @@
 
 # Standard Library
 from __future__ import print_function
+from datetime import datetime
 from textwrap import dedent
 import argparse, gzip, os, sys
 
@@ -107,6 +108,30 @@ def fatal(*message, **kwargs):
     """
     err(*message, **kwargs)
     sys.exit(1)
+
+
+def timestamp(format="%Y-%m-%d %H:%M:%S"):
+    """Returns a formatted timestamp string
+    for the current time.
+    @param format <str>:
+        Format string for the timestamp, default:
+        "%Y-%m-%d %H:%M:%S" which is equivalent to
+        "2023-10-01 12:00:00" for example.
+    @return <str>:
+        Formatted timestamp string, i.e. "2023-10-01 12:00:00"
+    """
+    return datetime.now().strftime(format)
+
+
+def log(*message):
+    """Logs a message to standard output with a timestamp.
+    @param message <any>:
+        Values printed to log
+    """
+    print("[{0}] {1}".format(
+        timestamp(),
+        " ".join([str(m) for m in message]))
+    )
 
 
 def check_permissions(parser, path, *args, **kwargs):
@@ -271,6 +296,7 @@ def index_file(file, keys, key_delim, values):
             keys=["A","B"], values["C","D"], key_delim="|"
             returns {"A|B": {"C": "c_i", "D": "d_i"}}
     """
+    log("Started indexing input file: {0}".format(file))
     file_idx = {}
     # Handler for opening files, i.e.
     # uncompressed or gzip files
@@ -348,6 +374,7 @@ if __name__ == '__main__':
         # Nothing was provided
         fatal('Invalid usage: {0} [-h] ...'.format(os.path.basename(sys.argv[0])))
     
+    log("Running leafcutter annotation script with the following options: ", args)
     # Create output directory if
     # it does not exist
     output_dir = os.path.abspath(os.path.dirname(args.output))
@@ -387,6 +414,7 @@ if __name__ == '__main__':
 
     # Loop through effect sizes file
     # and add more detailed information
+    log("Writing annotated output file: ", args.output)
     ofh = open(args.output, "w")
     with open(args.effect_sizes, "r") as ifh:
         input_header = next(ifh).rstrip().split("\t") + PARSE_CLUSTER_SIGNIF + PARSE_INTRON_ANN
