@@ -291,6 +291,54 @@ def index_file(file, keys, key_delim, values):
     return file_idx 
 
 
+def parse_intron(line_list, intron_idx):
+    """Parses intron information into tokens from a line list
+    in the effect sizes file.
+    @param line_list <list[str]>:
+        List of tokens from a line in the effect sizes file,
+        where each token represents a column in the file.
+    @param intron_idx <int>:
+        Index of the intron column in the line_list.
+        The intron column is formatted as:
+        "{chr}:{intron_start}:{intron_end}:{clust_id}"
+    @return <tuple>:
+        Returns a tuple of the form:
+        (chromosome, intron_start, intron_end, cluster_id)
+        where each element is a string.
+        If the intron format is invalid, it returns None.
+    """
+    intron = line_list[intron_idx]
+    try:
+        chrom, start, stop, cluster_id = intron.split(":")
+    except ValueError:
+        err("Warning: Invalid intron format in provided effect sizes file!")
+        err(" └── Expected format = chr:intron_start:intron_end:clust_id")
+        err(" └── Encountered format = {0}".format(intron))
+        return None
+    return (chrom, start, stop, cluster_id)
+
+
+def get_additional_annotation_information(annotation_dict, first_key, values):
+    """Get additional annotation information from a nested 
+    dictionary using the first_key and each value in values
+    as a composite key. Returns a list of values corresponding
+    to the provided (first_key, value) pairs in annotation_dict.
+    If a key is not found, it returns "NA" for that value.
+    @param annotation_dict <dict>:
+        Nested dictionary containing additional annotation information
+        keyed by [first_key][v] where v is an element in values.
+    @param first_key <str>:
+        First key in the nested dictionary to use for lookups.
+    @param values <list[str]>:
+        List of values to retrieve from the dictionary. This is
+        the second key in the nested dictionary.
+    @return <list[str]>:
+        Returns a list of values corresponding to the provided keys.
+        If a key is not found, it returns "NA" for that value.
+    """
+    return [annotation_dict.get(first_key, {}).get(v, "NA") for v in values]
+
+
 if __name__ == '__main__':
     # Parse command line arguments
     args = parse_cli_arguments()
@@ -348,29 +396,35 @@ if __name__ == '__main__':
         for line in ifh:
             # Split the line into columns
             tokens = line.rstrip().split('\t')
-            # where intron column format:
+            # Parse intron info, where intron column format:
             # {chr}:{intron_start}:{intron_end}:{clust_id}
-            intron = tokens[intron_idx]
-            ichrom, istart, istop, icluster_id = intron.split(":")
-            # where cluster_signif look
-            # up key = {chr}:{clust_id}
-            _cluster_signif_values = []
-            for v in PARSE_CLUSTER_SIGNIF:
-                clust_signif_key = "{0}:{1}".format(ichrom, icluster_id)
-                try: parsed_clust_v = cluster_signif_dict[clust_signif_key][v]
-                except KeyError: parsed_clust_v = "NA"
-                _cluster_signif_values.append(parsed_clust_v)
+            intron = parse_intron(tokens, intron_idx)  # returns (chr,intron_start,intron_end,clust_id)
+            if intron is None: continue  # invalid intron format
+            intron_chrom, intron_start, intron_stop, intron_cluster_id = intron
+            # Get additional cluster signif info,
+            # where cluster_signif look up
+            # first_key = {chr}:{clust_id}
+            # and second_key is each element in
+            # PARSE_CLUSTER_SIGNIF
+            _cluster_signif_values = get_additional_annotation_information(
+                cluster_signif_dict,
+                "{0}:{1}".format(intron_chrom, intron_cluster_id),
+                PARSE_CLUSTER_SIGNIF
+            )
             # Check if cluster meets FDR threshold
             try: fdr = float(_cluster_signif_values[ADJ_P_COLUMN_IDX])
             except ValueError: continue                # value cannot be type cast, i.e NA
             if fdr > float(args.fdr_filter): continue  # does not meet filter
-            # where intron_ann look 
-            # up key = {chr}:{intron_start}:{intron_end}:{clust_id}
-            _intron_ann_values = []
-            for v in PARSE_INTRON_ANN:
-                try: parsed_intron_v = intron_ann_dict[intron][v]
-                except KeyError: parsed_intron_v = "NA"
-                _intron_ann_values.append(parsed_intron_v)
+            # Get additional intron info, where 
+            # intron_ann first_key:
+            # {chr}:{intron_start}:{intron_end}:{clust_id}
+            # and second_key is each element in
+            # PARSE_INTRON_ANN
+            _intron_ann_values = get_additional_annotation_information(
+                intron_ann_dict,
+                ":".join(intron),
+                PARSE_INTRON_ANN
+            )
             # Write annotated line to output
             _output_line = "{0}\t{1}\t{2}".format(
                 "\t".join(tokens),
