@@ -19,12 +19,12 @@ _HELP = dedent("""
     Given an exon annotation (see output file of
     exon_annotation.py), this script will create
     a tab-separated file with the splicing info
-    for each transcript. For each transcript,
-    the following information will be included:
-        • gene_id
-        • gene_name
+    for each transcript. For each transcript the
+    following information will be included:
         • transcript_id
         • transcript_name
+        • gene_id
+        • gene_name
         • exon_id.1|exon_id.2|...
         • exon_number.1|exon_number.2|...
         • exon_seqname
