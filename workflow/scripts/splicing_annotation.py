@@ -9,7 +9,7 @@ from textwrap import dedent
 import argparse, gzip, os, sys
 
 # Constants
-# Usage and help section 
+# Usage and help section
 _HELP = dedent("""
 @Usage:
     $ ./splicing_annotation.py [-h] [--version] \\
@@ -28,7 +28,7 @@ _HELP = dedent("""
         • exon_id.1|exon_id.2|...
         • exon_number.1|exon_number.2|...
         • exon_seqname
-        • exon_start:exon_end.1|exon_start.2|...
+        • exon_start:exon_end.1|exon_start.2:exon_end.2|...
         • exon_strand
 
     This file has 1:M exon information collapsed by
@@ -216,9 +216,9 @@ def index_header(file_header):
 
 
 def index_file(
-        file, key = "transcript_id", 
-        single_value_columns=["gene_id", "gene_name", "transcript_name"],
-        multi_value_columns=["exon_id", "exon_number", "exon_seqname","exon_start", "exon_end", "exon_strand"],
+        file, key = "transcript_id",
+        single_value_columns=["transcript_name", "gene_id", "gene_name"],
+        multi_value_columns=["exon_id", "exon_number", "exon_seqname","exon_start_end", "exon_strand"],
         multi_value_key_name="exon_metadata"
     ):
     """Parses and indexes a file into a dictionary for quick
@@ -271,7 +271,7 @@ def index_file(
     # Handler for opening files, i.e.
     # uncompressed or gzip files
     open_func = gzip.open if file.endswith('.gz') else open
-    line_number = 0  # Used for error reporting 
+    line_number = 0  # Used for error reporting
     with open_func(file, 'rt') as fh:
         header = next(fh)
         col_idx = index_header(header)
@@ -283,8 +283,8 @@ def index_file(
             # Concatenate mutiple keys into
             # a single key separated by the
             # key_delim character
-            _k = tokens[col_idx[key]]
-            _v = {v: tokens[col_idx[v]] for v in single_value_columns if v in col_idx}
+            _k = tokens[col_idx[key]]  # _k represents transcript_id
+            _v = {v: get_with_default(tokens,col_idx,v) for v in single_value_columns}
             if _k not in file_idx:
                 # Create a new entry in the index
                 # with the single value columns
@@ -295,7 +295,7 @@ def index_file(
                 # transcript_id.
                 file_idx[_k] = _v
             # Parse multi-value columns
-            _multi_values = [tokens[col_idx[v]] for v in multi_value_columns if v in col_idx]
+            _multi_values = [get_with_default(tokens,col_idx,v) for v in multi_value_columns]
             # Add multi-value columns to the
             # file_idx under the multi_value_key_name
             if multi_value_key_name not in file_idx[_k]:
@@ -303,52 +303,82 @@ def index_file(
             # Append the multi-value columns
             file_idx[_k][multi_value_key_name].append(_multi_values)
     log("Finished indexing input file: {0} ({1} lines)".format(file, line_number))
-    return file_idx 
+    return file_idx
 
 
-def get_additional_annotation_information(annotation_dict, first_key, values):
-    """Get additional annotation information from a nested 
-    dictionary using the first_key and each value in values
-    as a composite key. Returns a list of values corresponding
-    to the provided (first_key, value) pairs in annotation_dict.
-    If a key is not found, it returns "NA" for that value.
-    @param annotation_dict <dict>:
-        Nested dictionary containing additional annotation information
-        keyed by [first_key][v] where v is an element in values.
-    @param first_key <str>:
-        First key in the nested dictionary to use for lookups.
-    @param values <list[str]>:
-        List of values to retrieve from the dictionary. This is
-        the second key in the nested dictionary.
-    @return <list[str]>:
-        Returns a list of values corresponding to the provided keys.
-        If a key is not found, it returns "NA" for that value.
+def get_with_default(line_list, column_name_idx_dict, column_name, default_value="NA"):
+    """Get a value from a list using the column name index
+    dictionary. If the column name does not exist in the
+    dictionary, return the default value (i.e "NA").
+    @param line_list <list[str]>:
+        List of values from a line in a file. This is the
+        list that get are retrieving information from.
+        This function is used to return a value (with a
+        default value if missing) from within a list or
+        dictionary comprehension.
+    @param column_name_idx_dict <dict[str]=int>:
+        Dictionary mapping column names to their index
+    @param column_name <str>:
+        Column name to look up in the dictionary
+    @param default_value <str>:
+        Default value to return if the column name does not
+        exist in the dictionary. Defaults to "NA".
+    @return value <str>:
+        Value from the list at the index of the column name,
+        or the default value if the column name does not exist.
     """
-    return [annotation_dict.get(first_key, {}).get(v, "NA") for v in values]
+    # Default value to return if column name DNE
+    parsed_value = default_value
+    # Try to get the index of the column name
+    # This can result in a KeyError/IndexError
+    # if the column name does not exist in the
+    # dict. This can be caused upstream of this
+    # program if this 9th column in the GTF file
+    # is missing attributes that we expect to be
+    # present, i.e gene_id, gene_name, exon_number,
+    # etc. These should be present in 99% of GTF
+    # files, but it is possible that some files do
+    # not contain these attributes. Of all the
+    # attributes that are expected, the exon_number
+    # may not always be present; however, that is
+    # okay. It isn't be used in a meaningful way.
+    if column_name in column_name_idx_dict:
+        # Get the index of the column name
+        # from the dictionary.
+        # This will raise a KeyError if the
+        # column name does not exist in the dict.
+        list_idx = column_name_idx_dict[column_name]
+        if list_idx < len(line_list):
+            # If the index is within the bounds of the list,
+            # return the value at that index.
+            parsed_value = line_list[list_idx]
+            # Remove quotes from the value
+            parsed_value = stripped(parsed_value)
+    return parsed_value
 
 
 if __name__ == '__main__':
     # Parse command line arguments
     args = parse_cli_arguments()
-    
+
     # Sanity check for usage
     if len(sys.argv) == 1:
         # Nothing was provided
         fatal('Invalid usage: {0} [-h] ...'.format(os.path.basename(sys.argv[0])))
-    
+
     log("Running splicing annotation script with the following options: ", args)
     # Create output directory if
     # it does not exist
     output_dir = os.path.abspath(os.path.dirname(args.output))
     if not os.path.exists(output_dir):
         try: os.makedirs(output_dir)
-        except OSError as e: 
+        except OSError as e:
             fatal(
                 "Fatal error: Failed to create output directory: {0}\n{1}".format(
                     output_dir, e
                 )
             )
-    
+
     # Parse and collapse exon annotation
     # information for each transcript,
     # where 1:M exon information is
@@ -358,9 +388,9 @@ if __name__ == '__main__':
     FIRST_KEY = "transcript_id"
     EXON_1toM_KEY = "exon_metadata"
     PARSE_1to1_COLUMNS = [
+        "transcript_name",
         "gene_id",
-        "gene_name",
-        "transcript_name"
+        "gene_name"
     ]
     PARSE_1toM_COLUMNS = [
         "exon_id",
@@ -372,7 +402,7 @@ if __name__ == '__main__':
     ]
     splicing_dict = index_file(
         file=args.exon_ann,
-        key = FIRST_KEY, 
+        key = FIRST_KEY,
         single_value_columns=PARSE_1to1_COLUMNS,
         multi_value_columns=PARSE_1toM_COLUMNS,
         multi_value_key_name=EXON_1toM_KEY
@@ -385,16 +415,70 @@ if __name__ == '__main__':
             # Sort the list of lists by:
             # seqname, start, end, strand
             v[EXON_1toM_KEY].sort(
-                key=lambda x: (x[2], int(x[3]), int(x[4]), x[5])
+                key=lambda x: (
+                    x[PARSE_1toM_COLUMNS.index("exon_seqname")],
+                    int(x[PARSE_1toM_COLUMNS.index("exon_start")]),
+                    int(x[PARSE_1toM_COLUMNS.index("exon_end")]),
+                    x[PARSE_1toM_COLUMNS.index("exon_strand")]
+                )
             )
             # Get the strand information
             # for the first exon in the list
             # to determine if the order
             # needs to be reversed.
-            if v[EXON_1toM_KEY][0][5] == "-":
-                # If the strand is negative, 
+            if v[EXON_1toM_KEY][0][PARSE_1toM_COLUMNS.index("exon_strand")] == "-":
+                # If the strand is negative,
                 # reverse the order of the exon
                 # information to reflect the
                 # correct splicing order.
                 v[EXON_1toM_KEY].reverse()
     log("Finished sorting exon information by seqname, start, end, strand")
+    # Write the splicing annotation to the output file
+    log("Writing splicing annotation to output file: ", args.output)
+    MISSING_VALUES = ["NA", "Unknown", ""]
+    with open(args.output, 'w') as out_fh:
+        # Write the header line
+        out_fh.write(
+            "\t".join([
+                "transcript_id","transcript_name",
+                "gene_id","gene_name",
+                "exon_id","exon_number",
+                "exon_seqname","exon_start_end",
+                "exon_strand"
+            ]) + "\n"
+        )
+        # Write the splicing annotation
+        for transcript_id, data in splicing_dict.items():
+            exon_metadata = data[EXON_1toM_KEY]
+            exon_ids = "|".join([x[PARSE_1toM_COLUMNS.index("exon_id")] for x in exon_metadata])
+            # Replace missing values with their
+            # index after coordinate sorting
+            exon_numbers = [x[PARSE_1toM_COLUMNS.index("exon_number")] for x in exon_metadata]
+            exon_numbers = [i if e in MISSING_VALUES else e for i,e in enumerate(exon_numbers)]
+            exon_numbers = "|".join(exon_numbers)
+            # NOTE: All strand information should
+            # be the same for a given transcript.
+            exon_seqnames = "|".join(list(set([x[PARSE_1toM_COLUMNS.index("exon_seqname")] for x in exon_metadata])))
+            exon_start_ends = "|".join(
+                ["{0}:{1}".format(
+                    x[PARSE_1toM_COLUMNS.index("exon_start")], x[PARSE_1toM_COLUMNS.index("exon_end")]
+                ) for x in exon_metadata]
+            )
+            # NOTE: All strand information should
+            # be the same for a given transcript.
+            exon_strands = "|".join(list(set([x[PARSE_1toM_COLUMNS.index("exon_strand")] for x in exon_metadata])))
+            out_fh.write(
+                "\t".join([
+                    transcript_id,
+                    data["transcript_name"],
+                    data["gene_id"],
+                    data["gene_name"],
+                    exon_ids,
+                    exon_numbers,
+                    exon_seqnames,
+                    exon_start_ends,
+                    exon_strands
+                ]) + "\n"
+            )
+    log("Finished writing splicing annotation to output file: ", args.output)
+    log("Splicing annotation script completed successfully!")
