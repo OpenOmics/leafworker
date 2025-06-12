@@ -24,10 +24,12 @@ rule leafcutter_gtf2exons:
         gtf   = gtf_file
     output:
         exons = join(workpath, "temp", "exons.tsv.gz"),
-        ann   = join(workpath, "temp", "exon_annotation.tsv"),
+        exon_ann   = join(workpath, "temp", "exon_annotation.tsv"),
+        splice_ann = join(workpath, "temp", "splicing_annotation.tsv"),
     params:
         rname = "gtf2exons",
-        pyscript = join(workpath, "workflow", "scripts", "exon_annotation.py"),
+        ex_script = join(workpath, "workflow", "scripts", "exon_annotation.py"),
+        sp_script = join(workpath, "workflow", "scripts", "splicing_annotation.py"),
     resources:
         mem   = allocated("mem",  "leafcutter_gtf2exons", cluster),
         time  = allocated("time", "leafcutter_gtf2exons", cluster),
@@ -51,9 +53,18 @@ rule leafcutter_gtf2exons:
     # transcript_name, exon_id, exon_number,
     # exon_start, exon_end, exon_length
     echo 'Getting detailed exon information...'
-    {params.pyscript} \\
+    {params.ex_script} \\
         --input {input.gtf} \\
-        --output {output.ann}
+        --output {output.exon_ann}
+    # Get splicing annotation for each
+    # transcript, contains information
+    # about the location, number, and
+    # and exon_id of each exon that
+    # makes up the transcript
+    echo 'Getting splicing annotation...'
+    {params.sp_script} \\
+        --exon-ann {output.exon_ann} \\
+        --output {output.splice_ann}
     """
 
 
