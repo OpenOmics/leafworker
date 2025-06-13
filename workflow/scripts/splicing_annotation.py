@@ -13,6 +13,7 @@ import argparse, gzip, os, sys
 _HELP = dedent("""
 @Usage:
     $ ./splicing_annotation.py [-h] [--version] \\
+            [--sort-exons-by-exon-order] \\
             --exon-ann EXON_ANN_FILE \\
             --output OUTPUT_FILE
 @About:
@@ -28,7 +29,7 @@ _HELP = dedent("""
         • exon_id.1|exon_id.2|...
         • exon_number.1|exon_number.2|...
         • exon_seqname
-        • exon_start:exon_end.1|exon_start.2:exon_end.2|...
+        • exon_start.1:exon_end.1|exon_start.2:exon_end.2|...
         • exon_strand
 
     This file has 1:M exon information collapsed by
@@ -47,6 +48,42 @@ _HELP = dedent("""
         exon information. This represent the
         transcript model for each gene.
 @Options:
+    --sort-exons-by-exon-order
+        By default, 1:M exon information is 
+        sorted by seqname, exon_start, exon_end,
+        and strand. This results in 1:M exon
+        information being sorted by their genomic
+        position which is not the same as their
+        splicing order for transcripts on the
+        negative strand.
+        The default behavior will result in 1:M
+        exon information being reporting in the
+        following order:
+          • Positive strand transcripts:
+              • exon.1, exon.2, exon.3, ...
+          • Negative strand transcripts:
+              • ..., exon.3, exon.2, exon.1
+        If this option IS provided, the order
+        will be reversed for negative strand
+        transcripts to reflect the correct
+        splicing order, meaning it will be
+        sorted by exon order instead of
+        genomic position. The order will be:
+          • Positive strand transcripts:
+              • exon.1, exon.2, exon.3, ...
+          • Negative strand transcripts:
+              • exon.1, exon.2, exon.3, ...
+        It is worth noting that if this option
+        IS NOT provided (default behavior),
+        1:M exon_start_end information related
+        to exon location will be listed in
+        increasing order for negative strand
+        transcripts-- whereas if this option
+        is provided, 1:M exon_start_end info
+        will be listed in decreasing order for
+        negative strand transcripts. 
+          • Default: False (i.e exons are
+            sorted by genomic position).
     -h, --help
         Shows help message and exits.
     -v, --version
@@ -169,6 +206,14 @@ def parse_cli_arguments():
         type = str,
         required=True,
         help=argparse.SUPPRESS
+    )
+    # Sort exons by exon order,
+    # not by genomic position
+    parser.add_argument(
+        '--sort-exons-by-exon-order',
+        action='store_true',
+        default=False,
+        help=argparse.SUPPRESS,
     )
     # Get version information
     parser.add_argument(
@@ -426,7 +471,7 @@ if __name__ == '__main__':
             # for the first exon in the list
             # to determine if the order
             # needs to be reversed.
-            if v[EXON_1toM_KEY][0][PARSE_1toM_COLUMNS.index("exon_strand")] == "-":
+            if v[EXON_1toM_KEY][0][PARSE_1toM_COLUMNS.index("exon_strand")] == "-" and args.sort_exons_by_exon_order:
                 # If the strand is negative,
                 # reverse the order of the exon
                 # information to reflect the
