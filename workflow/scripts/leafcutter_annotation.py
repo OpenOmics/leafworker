@@ -346,6 +346,107 @@ def parse_intron(line_list, intron_idx):
     return (chrom, start, stop, cluster_id)
 
 
+def index_annotated_splice_junctions(
+        file, 
+        single_value_features=["transcript_name", "exon_strand"],
+        multi_value_features=["exon_id", "exon_number", "exon_start_end"],
+        multi_value_delim="|"
+    ):
+    """Indexes the annotated splice junctions from the
+    splicing annotation file passed via the --splicing-ann
+    command line argument. This function returns a dictionary
+    containing exon-exon pair information for a given
+    transcript for a given splice junction.
+    Where:
+                           SpliceJunction
+                           |            |
+    transcriptX ---#########------------######-------
+                       exonA            exonB
+    @param file <str>:
+        Splicing annotation file containing exon
+        information for each transcript.
+    @param single_value_features <list[str]>:
+        List of features that are single valued
+        for each splice junction. These features
+        will be stored as a single value in the
+        output dictionary.
+    @param multi_value_features <list[str]>:
+        List of features that are multi valued
+        for each splice junction. These features
+        reprsent surrounding exon information
+        and will be stored as a single value
+        in the output dictionary, where each
+        value is delimited by multi_value_delim.
+    @param multi_value_delim <str>:
+        Delimiter used to separate multiple values
+        for multi valued features in the output
+        dictionary. Default is "|".
+    @return <dict[str]=dict[str]>:
+        Returns a dictionary where:
+        key = "{transcript}:{exonA_end}:{exonB_start}"
+        value = Dictionary containing additional
+        information about the exons surrounding
+        the splice junction. This dictionary has
+        the following keys:
+            • transcript_name: The name of the
+                transcript the splice junction is
+                associated with.
+            • exon_strand: Strand the exon is on.
+            • exon_id: The identifiers of the
+                surrounding exons. Information for
+                ExonA and ExonB are delimited by
+                a pipe "|" character.
+            • exon_number: The number of the
+                surrounding exons. Information for
+                ExonA and ExonB are delimited by
+                a pipe "|" character.
+            • exon_start_end: Start and end position
+                of the surrounding exons. Information
+                for ExonA and ExonB are delimited by
+                a pipe "|" character.
+    """
+    log("Started indexing input file: ", file)
+    file_idx = {}
+    # Handler for opening files, i.e.
+    # uncompressed or gzip files
+    open_func = gzip.open if file.endswith('.gz') else open
+    line_number = 0  # Used for error reporting
+    with open_func(file, 'rt') as fh:
+        header = next(fh)
+        col_idx = index_header(header)
+        for line in fh:
+            # Split the line into columns
+            tokens = line.strip().split('\t')
+            # Parse the splice junction information
+            transcript = tokens[col_idx["transcript_id"]]
+            nexons = len(tokens[col_idx["exon_id"]].split(multi_value_delim))
+            for i in range(0, nexons-1):
+                exonA_end = tokens[col_idx["exon_start_end"]].split(
+                    multi_value_delim
+                )[i].split(":")[1]
+                exonB_start = tokens[col_idx["exon_start_end"]].split(
+                    multi_value_delim
+                )[i+1].split(":")[0]
+                # Create the key for the splice junction
+                _k = "{0}:{1}:{2}".format(
+                    transcript, exonA_end, exonB_start
+                )
+                if _k not in file_idx:
+                    # Initialize the dictionary for this key
+                    file_idx[_k] = {}
+                # Parse single and multi valued features
+                for feature in single_value_features:
+                    file_idx[_k][feature] = tokens[col_idx[feature]]
+                for feature in multi_value_features:
+                    # Join multi valued features with the
+                    # multi_value_delim character
+                    file_idx[_k][feature] = multi_value_delim.join(
+                        tokens[col_idx[feature]].split(multi_value_delim)[i:i+2]
+                    )
+    log("Completed indexing input file: ", file)
+    return file_idx
+
+
 def get_additional_annotation_information(annotation_dict, first_key, values):
     """Get additional annotation information from a nested 
     dictionary using the first_key and each value in values
@@ -407,6 +508,8 @@ if __name__ == '__main__':
     # annotation file where:
     #   key = {chr}:{intron_start}:{intron_end}:{clust_id}
     PARSE_INTRON_ANN = ["gene","ensemblID","verdict","transcripts"]
+    INTRON_TRANSCRIPT_IDX = PARSE_INTRON_ANN.index("transcripts")
+    INTRON_VERDICT_IDX = PARSE_INTRON_ANN.index("verdict")
     intron_ann_dict = index_file(
         args.intron_ann,
         keys=["chr","start","end","clusterID"],
@@ -417,13 +520,21 @@ if __name__ == '__main__':
     # Parse exon information from the
     # splicing annotation file where:
     #   key = {transcript}:{exonA_end}:{exonB_start}
+    SINGULAR_EXON_FEATURES = ["transcript_name", "exon_strand"]
+    SURRONDING_EXON_FEATURES = ["exon_id", "exon_number", "exon_start_end"]
+    splicing_ann_dict = index_annotated_splice_junctions(
+        args.splicing_ann,
+        single_value_features=SINGULAR_EXON_FEATURES,
+        multi_value_features=SURRONDING_EXON_FEATURES,
+        multi_value_delim="|"
+    )
 
     # Loop through effect sizes file
     # and add more detailed information
     log("Writing annotated output file: ", args.output)
     ofh = open(args.output, "w")
     with open(args.effect_sizes, "r") as ifh:
-        input_header = next(ifh).rstrip().split("\t") + PARSE_CLUSTER_SIGNIF + PARSE_INTRON_ANN
+        input_header = next(ifh).rstrip().split("\t") + PARSE_CLUSTER_SIGNIF + PARSE_INTRON_ANN + SINGULAR_EXON_FEATURES + SURRONDING_EXON_FEATURES
         output_header = "\t".join(input_header)
         intron_idx = input_header.index("intron")
         ofh.write(output_header + "\n")
@@ -459,10 +570,46 @@ if __name__ == '__main__':
                 ":".join(intron),
                 PARSE_INTRON_ANN
             )
+            # Get exon information for the
+            # splice junction, where:
+            #   key = "transcript:exonA_end:exonB_start"
+            #   i.e "{transcript}:{intron_start}:{intron_end}"
+            # and values are the features
+            # in SINGULAR_EXON_FEATURES and
+            # SURRONDING_EXON_FEATURES
+            _exon_splice_junction_keys = [
+                "{0}:{1}:{2}".format(t,intron_start,intron_stop) \
+                for t in _intron_ann_values[INTRON_TRANSCRIPT_IDX].split("+")
+            ]
+            # Aggregate 1:M features across for
+            # splice junctions effecting more than
+            # one transcript
+            _exon_features_dict = {}
+            # Loop through each splice junction
+            for sj in _exon_splice_junction_keys:
+                for feature in SINGULAR_EXON_FEATURES + SURRONDING_EXON_FEATURES:
+                    if feature not in _exon_features_dict:
+                        _exon_features_dict[feature] = []
+                    _exon_features_dict[feature].append(
+                        splicing_ann_dict.get(sj, {}).get(feature, "NA")
+                    )
+            # Collapse exon-exon strand information,
+            # it will be on the same strand for a
+            # given transcript splice junction
+            _exon_features_dict["exon_strand"] = ["|".join(_exon_features_dict["exon_strand"])]
+            # Aggregate the exon information
+            _exon_ann_values = []
+            for feature in SINGULAR_EXON_FEATURES + SURRONDING_EXON_FEATURES:
+                # Join multi valued features with the
+                # multi_value_delim character
+                _exon_ann_values.append(
+                    "+".join(_exon_features_dict[feature])
+                )
             # Write annotated line to output
-            _output_line = "{0}\t{1}\t{2}".format(
+            _output_line = "{0}\t{1}\t{2}\t{3}".format(
                 "\t".join(tokens),
                 "\t".join(_cluster_signif_values),
-                "\t".join(_intron_ann_values)
+                "\t".join(_intron_ann_values),
+                "\t".join(_exon_ann_values)
             )
             ofh.write(_output_line + "\n")
