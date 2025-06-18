@@ -531,7 +531,7 @@ if __name__ == '__main__':
 
     # Loop through effect sizes file
     # and add more detailed information
-    log("Writing annotated output file: ", args.output)
+    log("Started writing annotated output file: ", args.output)
     ofh = open(args.output, "w")
     with open(args.effect_sizes, "r") as ifh:
         input_header = next(ifh).rstrip().split("\t") + PARSE_CLUSTER_SIGNIF + PARSE_INTRON_ANN + SINGULAR_EXON_FEATURES + SURRONDING_EXON_FEATURES
@@ -613,3 +613,4 @@ if __name__ == '__main__':
                 "\t".join(_exon_ann_values)
             )
             ofh.write(_output_line + "\n")
+    log("Finished writing annotated output file: ", args.output)
