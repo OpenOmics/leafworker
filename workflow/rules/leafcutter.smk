@@ -413,13 +413,17 @@ rule leafcutter_prepleafviz:
         res = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "diff_splicing_cluster_significance.txt"),
         eff = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "diff_splicing_effect_sizes.txt"),
         itn = join(workpath, "temp", "annotation_all_introns.bed.gz"),
+        spl = join(workpath, "temp", "splicing_annotation.tsv"),
     output:
         rda = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "{case}_vs_{control}_leafviz.Rdata"),
         itn = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "{case}_vs_{control}_intron_annotation.tsv"),
+        ann = join(workpath, "differential_splicing", batch_id, "{case}_vs_{control}", "{case}_vs_{control}_leafcutter_annotated_results.tsv"),
     params:
         rname  = "prleafviz",
         prefix = join(workpath, "temp", "annotation"),
-        rscript = join(workpath, "workflow", "scripts", "intron_annotation.R"),
+        rscript  = join(workpath, "workflow", "scripts", "intron_annotation.R"),
+        pyscript = join(workpath, "workflow", "scripts", "leafcutter_annotation.py"),
+        fdr_filter = 0.1,
     resources:
         mem   = allocated("mem",  "leafcutter_prepleafviz", cluster),
         time  = allocated("time", "leafcutter_prepleafviz", cluster),
@@ -433,7 +437,7 @@ rule leafcutter_prepleafviz:
     # Create input leafviz Rdata file for:
     # "{wildcards.case} vs. {wildcards.control}"
     prepare_results.R \\
-        --FDR 0.1 \\
+        --FDR {params.fdr_filter} \\
         --meta_data_file {input.grp} \\
         --code "{wildcards.case}_vs_{wildcards.control}" \\
         {input.num} \\
@@ -448,4 +452,15 @@ rule leafcutter_prepleafviz:
     {params.rscript} \\
         "{output.rda}" \\
         "{output.itn}"
+    # Merge and the effect sizes output file 
+    # with the cluster significance file and
+    # annotate the results
+    echo 'Merging and annotating leafcutter results...'
+    {params.pyscript} \\
+        --fdr-filter {params.fdr_filter} \\
+        --effect-sizes {input.eff} \\
+        --cluster-signif {input.res} \\
+        --intron-ann {output.itn} \\
+        --splicing-ann {input.spl} \\
+        --output {output.ann}
     """
