@@ -154,6 +154,18 @@ rule all:
             case=provided(case_groups, quantify_transcripts != "None"),
             control=provided(ctrl_groups, quantify_transcripts != "None"),
         ),
+        # Create filtered transcripts FASTA file,
+        # conditionally runs if the quantify
+        # transcripts option is provided and
+        # there are groups/contrasts.
+        # @imported from rules/isoformswitchanalyzer.smk
+        # @output of rule isoformswitchanalyzer_isoformfasta
+        expand(
+            join(workpath, "differential_switching", batch_id, "{case}_vs_{control}", "{case}-{control}_top_isoform_switches.fa"),
+            zip,
+            case=provided(case_groups, quantify_transcripts != "None"),
+            control=provided(ctrl_groups, quantify_transcripts != "None"),
+        ),
 
 
 # Import rules

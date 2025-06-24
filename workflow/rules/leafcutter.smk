@@ -18,7 +18,9 @@ rule leafcutter_gtf2exons:
     @Input:
         Input GTF file (singleton)
     @Output:
-        Exons TSV file
+        Exons TSV file,
+        Exon annotation file,
+        Splicing annotation file
     """
     input:
         gtf   = gtf_file
@@ -403,9 +405,11 @@ rule leafcutter_prepleafviz:
         Cluster significant table output by leafcutter_ds.R,
         Per-junction effect sizes table output by leafcutter_ds.R,
         All introns TSV file,
-
+        Splicing annotation file
     @Output:
-        Rdata file to input to leafviz shiny app
+        Rdata file to input to leafviz shiny app,
+        Intron annotation file,
+        Merged and annotated leafcutter results
     """
     input:
         num = join(workpath, "junctions", "leafcutter_perind_numers.counts.gz"),

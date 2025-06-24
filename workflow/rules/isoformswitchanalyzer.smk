@@ -311,7 +311,6 @@ rule isoformswitchanalyzer_diffswitching:
         vec = join(workpath, "differential_switching", batch_id, "{case}_vs_{control}", "sample_vector.tsv"),
     output:
         swt = join(workpath, "differential_switching", batch_id, "{case}_vs_{control}", "{case}-{control}_top_isoform_switches.tsv"),
-
     params:
         rname  = "diffswitch",
         outdir = join(workpath, "differential_switching", batch_id, "{case}_vs_{control}"),
@@ -339,4 +338,46 @@ rule isoformswitchanalyzer_diffswitching:
         --case_group {wildcards.case} \\
         --control_group {wildcards.control} \\
         --method saturn
+    """
+
+
+rule isoformswitchanalyzer_isoformfasta:
+    """
+    Data-processing step to write isoform sequences based on the
+    IsoformSwitchAnalyzeR results. This rule will create a FASTA
+    file containing the sequence of each transcript of an gene
+    with a significant isoform switch. So if a gene contains N
+    transcripts and it had a signficant switching event (based
+    on the fdr_filter), then the transcript sequences of all
+    N transcripts will be written to the FASTA file. 
+    @Input:
+        Differential isoform switching results (indirect-gather-per-contrast),
+        Splicing annotation file
+    @Output:
+        Differential isoform switching results
+    """
+    input:
+        swt = join(workpath, "differential_switching", batch_id, "{case}_vs_{control}", "{case}-{control}_top_isoform_switches.tsv"),
+        spl = join(workpath, "temp", "splicing_annotation.tsv"),
+    output:
+        fa  = join(workpath, "differential_switching", batch_id, "{case}_vs_{control}", "{case}-{control}_top_isoform_switches.fa"),
+    params:
+        rname  = "isofasta",
+        pyscript    = join(workpath, "workflow", "scripts", "isoform_sequences.py"),
+        transcripts = quantify_transcripts,
+        fdr_filter  = 0.1,
+    resources:
+        mem   = allocated("mem",  "isoformswitchanalyzer_isoformfasta", cluster),
+        time  = allocated("time", "isoformswitchanalyzer_isoformfasta", cluster),
+    threads: int(allocated("threads", "isoformswitchanalyzer_isoformfasta", cluster))
+    container: config["images"]["isoformswitchanalyzer"]
+    shell: """
+    # Create the filtered transcripts FASTA file
+    {params.pyscript} \\
+        -i {input.swt} \\
+        -s {input.spl} \\
+        -t {params.transcripts} \\
+        -o {output.fa} \\
+        -f {params.fdr_filter} \\
+        -d '|'
     """
