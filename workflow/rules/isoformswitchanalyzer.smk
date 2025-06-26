@@ -265,6 +265,7 @@ rule isoformswitchanalyzer_mkgroups:
     # expects the certain column names in design file
     awk -F '\\t' -v OFS='\\t' \\
         'NR==1 {{$1="sampleID"; $2="condition"; print}}' \\
+        {input.sample_sheet} \\
     > {output.grp}
     # Create sample sheet for IsoformSwitchAnalyzeR
     awk -F '\\t' -v OFS='\\t' \\
