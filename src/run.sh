@@ -189,7 +189,7 @@ function submit(){
 #!/usr/bin/env bash
 #SBATCH --cpus-per-task=6
 #SBATCH --mem=24g
-#SBATCH --time=10-00:00:00
+#SBATCH --time=7-00:00:00
 #SBATCH --parsable
 #SBATCH -J "$2"
 #SBATCH --mail-type=BEGIN,END,FAIL
