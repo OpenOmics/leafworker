@@ -10,11 +10,68 @@
 # gene models, a two groups to compare, and an output
 # directory to store the results. 
 ########################################################
-
-
 # Load the IsoformSwitchAnalyzeR library
 suppressMessages(library(IsoformSwitchAnalyzeR))  # Bioconductor package 
 suppressMessages(library(argparse))               # CRAN package
+
+
+###################################
+# Patching IsoformSwitchAnalyzeR
+###################################
+# This patch addresses an issue
+# within the importRdata function.
+# This patch prevents automatic
+# type casting of numeric/integer
+# columns within the design matrix.
+# This is important because auto-
+# casting can cause your design
+# matrix to not be full rank
+# after the conversion. Here is
+# the relevant GitHub issue:
+# https://github.com/kvittingseerup/IsoformSwitchAnalyzeR/issues/247
+pkg <- "IsoformSwitchAnalyzeR"
+fn_name <- "importRdata"
+ns <- asNamespace(pkg)
+buggy_fn <- getFromNamespace(fn_name, pkg)
+
+# Turn the function into text
+before_txt <- paste(deparse(buggy_fn), collapse = "\n")
+# Regex that matches:
+# if( uniqueLength( localDesign[,i] ) * 2 <= length(localDesign[,i]) ) {
+# with flexible whitespace/newlines
+# We will replace this with FALSE
+# so the if statement never gets
+# evalulated. This is where the
+# auto-casting happens.
+pattern <- paste0(
+  "if\\s*\\(\\s*uniqueLength\\s*\\(\\s*localDesign\\s*\\[\\s*,\\s*i\\s*\\]\\s*\\)",
+  "\\s*\\*\\s*2\\s*<=\\s*length\\s*\\(\\s*localDesign\\s*\\[\\s*,\\s*i\\s*\\]\\s*\\)",
+  "\\s*\\)\\s*\\{"
+)
+
+replacement <- "if(FALSE) {  # patched: disables numeric to factor auto-casting"
+if (!grepl(pattern, before_txt, perl = TRUE)) {
+  stop("Error: Patch target not found. Function text may differ in your installed version.")
+}
+
+after_txt <- sub(pattern, replacement, before_txt, perl = TRUE)
+
+# Recreate the function
+patched_fn <- eval(parse(text = after_txt), envir = ns)
+
+# Patches the namespace
+unlockBinding(fn_name, ns)
+assign(fn_name, patched_fn, envir = ns)
+lockBinding(fn_name, ns)
+
+# Patch any attached exports
+pkg_env_name <- paste0("package:", pkg)
+if (pkg_env_name %in% search()) {
+  pkg_env <- as.environment(pkg_env_name)
+  unlockBinding(fn_name, pkg_env)
+  assign(fn_name, patched_fn, envir = pkg_env)
+  lockBinding(fn_name, pkg_env)
+}
 
 
 ###################################
