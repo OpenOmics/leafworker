@@ -54,7 +54,7 @@ if (!grepl(pattern, before_txt, perl = TRUE)) {
   stop("Error: Patch target not found. Function text may differ in your installed version.")
 }
 
-after_txt <- sub(pattern, replacement, before_txt, perl = TRUE)
+after_txt <- gsub(pattern, replacement, before_txt, perl = TRUE)
 
 # Recreate the function
 patched_fn <- eval(parse(text = after_txt), envir = ns)
