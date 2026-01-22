@@ -163,8 +163,8 @@ rule isoformswitchanalyzer_salmon_matrix:
     input:
         counts = expand(join(workpath, "counts", "transcripts", "{name}", "quant.sf"), name=samples),
     output:
-        raw = join(workpath, "counts", "salmon.transcripts.raw_counts.tsv"),
-        tpm = join(workpath, "counts", "salmon.transcripts.tpm_normalized.tsv"),
+        raw = join(workpath, "counts", batch_id, "salmon.transcripts.raw_counts.tsv"),
+        tpm = join(workpath, "counts", batch_id, "salmon.transcripts.tpm_normalized.tsv"),
     params:
         rname  = "salmonmatrix",
         tmpdir = join(workpath, "temp"),

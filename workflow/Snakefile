@@ -128,8 +128,8 @@ rule all:
         # transcripts option is provided.
         # @imported from rules/isoformswitchanalyzer.smk
         # @output of rule isoformswitchanalyzer_salmon_matrix
-        provided([join(workpath, "counts", "salmon.transcripts.raw_counts.tsv")], quantify_transcripts != "None"),
-        provided([join(workpath, "counts", "salmon.transcripts.tpm_normalized.tsv")], quantify_transcripts != "None"),
+        provided([join(workpath, "counts", batch_id, "salmon.transcripts.raw_counts.tsv")], quantify_transcripts != "None"),
+        provided([join(workpath, "counts", batch_id, "salmon.transcripts.tpm_normalized.tsv")], quantify_transcripts != "None"),
         # Create comparisons sample sheet for running ISA
         # conditionally runs if the quantify
         # transcripts option is provided and
