@@ -21,7 +21,12 @@ jobs:
         /opt2/leafworker run --input \
         /opt2/.tests/WT_S1.bam /opt2/.tests/WT_S2.bam /opt2/.tests/WT_S3.bam \
         /opt2/.tests/KO_S4.bam /opt2/.tests/KO_S5.bam /opt2/.tests/KO_S6.bam \
-        --output /opt2/output --gtf /opt2/.tests/gencode.v19.annotation.gtf.gz \
+        --output /opt2/output \
+        --gtf /opt2/.tests/gencode.v19.annotation.gtf.gz \
+        --quantify-transcripts /opt2/.tests/transcripts.fa \
+        --groups /opt2/.tests/groups.tsv \
+        --contrasts /opt2/.tests/contrasts.tsv \
+        --batch-id "Batch-42" \
         --mode local --dry-run
     - name: View the pipeline config file
       run: |
