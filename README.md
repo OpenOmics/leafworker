@@ -63,13 +63,13 @@ If you use this software, please cite it as below:
   <summary><b><i>@BibText</i></b></summary>
  
 ```text
-@software{Kuhn_OpenOmics_leafworker_2025,
+@software{Kuhn_OpenOmics_leafworker_2026,
   author       = {Kuhn, Skyler},
   title        = {OpenOmics/leafworker},
-  month        = apr,
-  year         = 2025,
+  month        = feb,
+  year         = 2026,
   publisher    = {Zenodo},
-  version      = {v0.1.0},
+  version      = {v0.3.1},
   doi          = {10.5281/zenodo.15170953},
   url          = {https://doi.org/10.5281/zenodo.15170953}
 }
@@ -81,7 +81,7 @@ If you use this software, please cite it as below:
   <summary><b><i>@APA</i></b></summary>
 
 ```text
-Kuhn, S. (2025). OpenOmics/leafworker: v0.1.0. Zenodo. https://doi.org/10.5281/zenodo.15170953
+Kuhn, S. (2026). OpenOmics/leafworker: v0.3.1. Zenodo. https://doi.org/10.5281/zenodo.15170953
 ```
 
 </details>
