@@ -1,4 +1,5 @@
 {
     "options": {
+        "LEAFCUTTER_FDR_THRESHOLD": "0.1"
     }
 }

@@ -20,6 +20,10 @@ gtf_file = config['options']['gtf']            # File for annotating splice junc
 grp_file = config['options'].get('groups','')  # Groups file
 batch_id = config['options']['batch_id']       # Batch Identifer, default: ''.
 
+# Leafcutter FDR threshold,
+# default: 0.1
+leafcutter_fdr = float(config['options']['LEAFCUTTER_FDR_THRESHOLD'])
+
 # Quanity transcript abundances
 quantify_transcripts = config['options'].get('quantify_transcripts')
 

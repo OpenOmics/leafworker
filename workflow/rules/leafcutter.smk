@@ -427,7 +427,7 @@ rule leafcutter_prepleafviz:
         prefix = join(workpath, "temp", "annotation"),
         rscript  = join(workpath, "workflow", "scripts", "intron_annotation.R"),
         pyscript = join(workpath, "workflow", "scripts", "leafcutter_annotation.py"),
-        fdr_filter = 0.1,
+        fdr_filter = leafcutter_fdr,
     resources:
         mem   = allocated("mem",  "leafcutter_prepleafviz", cluster),
         time  = allocated("time", "leafcutter_prepleafviz", cluster),
